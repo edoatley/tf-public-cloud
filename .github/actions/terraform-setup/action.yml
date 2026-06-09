@@ -1,0 +1,47 @@
+name: Terraform Setup
+description: Install Terraform and authenticate to the target cloud. Caller must run actions/checkout before this action.
+
+inputs:
+  cloud:
+    description: Target cloud — aws, gcp, or azure.
+    required: true
+  aws_role_arn:
+    description: IAM role ARN to assume (AWS only).
+    required: false
+  aws_region:
+    description: AWS region (AWS only).
+    required: false
+  gcp_wif_provider:
+    description: Workload Identity Federation provider (GCP only).
+    required: false
+  gcp_service_account:
+    description: Service account email (GCP only).
+    required: false
+  azure_client_id:
+    description: App registration client ID (Azure only).
+    required: false
+  azure_tenant_id:
+    description: Azure tenant ID (Azure only).
+    required: false
+  azure_subscription_id:
+    description: Azure subscription ID (Azure only).
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Terraform
+      uses: hashicorp/setup-terraform@v4
+      # Reads .terraform-version automatically — no terraform_version input needed.
+
+    - name: Authenticate to cloud
+      uses: ./.github/actions/cloud-login
+      with:
+        cloud: ${{ inputs.cloud }}
+        aws_role_arn: ${{ inputs.aws_role_arn }}
+        aws_region: ${{ inputs.aws_region }}
+        gcp_wif_provider: ${{ inputs.gcp_wif_provider }}
+        gcp_service_account: ${{ inputs.gcp_service_account }}
+        azure_client_id: ${{ inputs.azure_client_id }}
+        azure_tenant_id: ${{ inputs.azure_tenant_id }}
+        azure_subscription_id: ${{ inputs.azure_subscription_id }}

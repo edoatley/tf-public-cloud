@@ -1,0 +1,21 @@
+[
+  {
+    "role": "Reader",
+    "scope": "resource_group",
+    "resource": "rg-tf-public-cloud-state",
+    "comment": "Allows terraform init to resolve the state storage account via ARM (Microsoft.Storage/storageAccounts/read)"
+  },
+  {
+    "role": "Storage Blob Data Contributor",
+    "scope": "storage_account",
+    "resource": "tfpubliccloudazstate",
+    "resource_group": "rg-tf-public-cloud-state",
+    "comment": "Read/write state blobs in the Terraform state storage account"
+  },
+  {
+    "role": "Contributor",
+    "scope": "subscription",
+    "resource": "",
+    "comment": "Create/manage resource groups and resources for Terraform examples"
+  }
+]

@@ -1,0 +1,51 @@
+name: Terraform Run
+description: init, then plan, apply, or destroy a Terraform module. Caller must run actions/checkout and cloud auth before this action.
+
+inputs:
+  module_path:
+    description: Relative path to the Terraform module (e.g. aws/object-storage).
+    required: true
+  action:
+    description: "Terraform action to run: plan, apply, or destroy."
+    required: true
+  extra_vars:
+    description: Additional -var flags to append to plan/destroy (e.g. '-var="project=my-project"').
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: terraform init
+      shell: bash
+      run: terraform init -input=false
+      working-directory: ${{ inputs.module_path }}
+
+    - name: terraform plan
+      if: inputs.action == 'plan' || inputs.action == 'apply'
+      shell: bash
+      run: terraform plan -no-color -input=false ${{ inputs.action == 'plan' && '-lock=false' || '-out=tfplan.binary' }} ${{ inputs.extra_vars }}
+      working-directory: ${{ inputs.module_path }}
+
+    - name: terraform apply
+      if: inputs.action == 'apply'
+      shell: bash
+      run: terraform apply -auto-approve -input=false tfplan.binary
+      working-directory: ${{ inputs.module_path }}
+
+    - name: terraform destroy
+      if: inputs.action == 'destroy'
+      shell: bash
+      run: terraform destroy -auto-approve -input=false ${{ inputs.extra_vars }}
+      working-directory: ${{ inputs.module_path }}
+
+    - name: Write summary
+      if: success()
+      shell: bash
+      run: |
+        echo "## ${{ inputs.action }}: \`${{ inputs.module_path }}\`" >> "$GITHUB_STEP_SUMMARY"
+        if [ "${{ inputs.action }}" != "plan" ]; then
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          terraform output -no-color 2>/dev/null >> "$GITHUB_STEP_SUMMARY" || true
+        fi
+      working-directory: ${{ inputs.module_path }}

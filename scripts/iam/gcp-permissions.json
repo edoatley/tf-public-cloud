@@ -1,0 +1,20 @@
+[
+  {
+    "role": "roles/storage.objectAdmin",
+    "scope": "bucket",
+    "resource": "tf-public-cloud-gcp-state-edo",
+    "comment": "Read/write state files in the Terraform state bucket"
+  },
+  {
+    "role": "roles/storage.legacyBucketReader",
+    "scope": "bucket",
+    "resource": "tf-public-cloud-gcp-state-edo",
+    "comment": "storage.buckets.get required by terraform init"
+  },
+  {
+    "role": "roles/storage.admin",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage GCS buckets for the object-storage example"
+  }
+]

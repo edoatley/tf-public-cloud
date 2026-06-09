@@ -1,0 +1,28 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfstate.lock.info
+.terraform.lock.hcl
+tfplan.binary
+plan.txt
+plan-readable.txt
+outputs.json
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# tfvars — commit only .example files
+*.tfvars
+!*.tfvars.example
+
+# .terraform.lock.hcl is intentionally tracked (supply-chain security)
+
+# OS
+.DS_Store
+Thumbs.db
+
+cheat.md
+.env
