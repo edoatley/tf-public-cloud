@@ -84,10 +84,10 @@ gh run watch
 Update IAM permissions without re-running the full bootstrap:
 
 ```sh
-./scripts/apply-aws-iam-policy.sh github-tf-public-cloud-plan  scripts/iam/aws-plan-policy.json
-./scripts/apply-aws-iam-policy.sh github-tf-public-cloud-apply scripts/iam/aws-apply-policy.json
-./scripts/apply-gcp-iam-bindings.sh [--remove] <sa-email> scripts/iam/gcp-permissions.json
-./scripts/apply-azure-rbac.sh [--remove] <client-id> scripts/iam/azure-permissions.json
+./scripts/bootstrap/apply-aws-iam-policy.sh github-tf-public-cloud-plan  scripts/iam/aws-plan-policy.json
+./scripts/bootstrap/apply-aws-iam-policy.sh github-tf-public-cloud-apply scripts/iam/aws-apply-policy.json
+./scripts/bootstrap/apply-gcp-iam-bindings.sh [--remove] <sa-email> scripts/iam/gcp-permissions.json
+./scripts/bootstrap/apply-azure-rbac.sh [--remove] <client-id> scripts/iam/azure-permissions.json
 ```
 
 ## Terraform version
@@ -142,4 +142,4 @@ Composite actions in `.github/actions/`:
 
 ## IAM permissions as code
 
-Cloud IAM permissions live in `scripts/iam/` as JSON files and are applied with dedicated idempotent scripts. Edit the JSON, then re-run the apply script — do not modify permissions directly in the bootstrap scripts or in the cloud console.
+Cloud IAM permissions live in `scripts/iam/` as JSON files and are applied with dedicated idempotent scripts in `scripts/bootstrap/`. Edit the JSON, then re-run the apply script — do not modify permissions directly in the bootstrap scripts or in the cloud console.
