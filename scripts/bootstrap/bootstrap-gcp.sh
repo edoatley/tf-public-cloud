@@ -133,7 +133,7 @@ gcloud iam service-accounts add-iam-policy-binding "${GSA_EMAIL}" \
 
 echo ""
 echo "==> [GCP] Applying IAM bindings from scripts/iam/gcp-permissions.json"
-"${SCRIPT_DIR}/apply-gcp-iam-bindings.sh" "${GSA_EMAIL}" "${SCRIPT_DIR}/iam/gcp-permissions.json"
+"${SCRIPT_DIR}/apply-gcp-iam-bindings.sh" "${GSA_EMAIL}" "${SCRIPT_DIR}/../iam/gcp-permissions.json"
 
 # ---------- Summary ----------
 

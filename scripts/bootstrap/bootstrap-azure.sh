@@ -187,7 +187,7 @@ add_federated_credential \
 
 echo ""
 echo "==> [Azure] Applying RBAC assignments for service principal"
-"${SCRIPT_DIR}/apply-azure-rbac.sh" "${APP_ID}" "${SCRIPT_DIR}/iam/azure-permissions.json"
+"${SCRIPT_DIR}/apply-azure-rbac.sh" "${APP_ID}" "${SCRIPT_DIR}/../iam/azure-permissions.json"
 
 # ---------- RBAC assignments (current user) ----------
 

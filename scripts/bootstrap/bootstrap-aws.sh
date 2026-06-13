@@ -202,8 +202,8 @@ apply_policy() {
     --policy-document "file://${POLICY_FILE}"
 }
 
-apply_policy "${PLAN_ROLE_NAME}"  "${SCRIPT_DIR}/iam/aws-plan-policy.json"
-apply_policy "${APPLY_ROLE_NAME}" "${SCRIPT_DIR}/iam/aws-apply-policy.json"
+apply_policy "${PLAN_ROLE_NAME}"  "${SCRIPT_DIR}/../iam/aws-plan-policy.json"
+apply_policy "${APPLY_ROLE_NAME}" "${SCRIPT_DIR}/../iam/aws-apply-policy.json"
 
 # ---------- Summary ----------
 
