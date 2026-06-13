@@ -177,17 +177,11 @@ add_federated_credential() {
   fi
 }
 
-# Apply + workflow_dispatch — trusted on push/dispatch from main (same sub claim)
+# All branches and pull requests
 add_federated_credential \
-  "github-main" \
-  "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/main" \
-  "GitHub Actions — push to main and workflow_dispatch from main"
-
-# Plan — trusted on pull requests
-add_federated_credential \
-  "github-pr" \
-  "repo:${GITHUB_ORG}/${GITHUB_REPO}:pull_request" \
-  "GitHub Actions plan — pull requests"
+  "github-all-branches" \
+  "repo:${GITHUB_ORG}/${GITHUB_REPO}:*" \
+  "GitHub Actions — all branches and pull requests"
 
 # ---------- RBAC assignments (service principal) ----------
 

@@ -152,10 +152,7 @@ PLAN_TRUST=$(cat <<EOF
         "token.actions.githubusercontent.com:aud": "${OIDC_AUDIENCE}"
       },
       "StringLike": {
-        "token.actions.githubusercontent.com:sub": [
-          "repo:${GITHUB_ORG}/${GITHUB_REPO}:pull_request",
-          "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/main"
-        ]
+        "token.actions.githubusercontent.com:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:*"
       }
     }
   }]
@@ -177,7 +174,7 @@ APPLY_TRUST=$(cat <<EOF
         "token.actions.githubusercontent.com:aud": "${OIDC_AUDIENCE}"
       },
       "StringLike": {
-        "token.actions.githubusercontent.com:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/main"
+        "token.actions.githubusercontent.com:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:*"
       }
     }
   }]
