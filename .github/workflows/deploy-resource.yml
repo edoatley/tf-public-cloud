@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - object-storage
+          - virtual-machine
       cloud:
         description: "Cloud to target"
         required: true
@@ -48,6 +49,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Load Terraform variables
+        uses: ./.github/actions/load-tf-vars
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Setup Terraform and authenticate
         uses: ./.github/actions/terraform-setup
         with:
@@ -73,6 +79,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Load Terraform variables
+        uses: ./.github/actions/load-tf-vars
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Setup Terraform and authenticate
         uses: ./.github/actions/terraform-setup
         with:
@@ -96,11 +107,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
-    env:
-      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
     steps:
       - uses: actions/checkout@v6
+
+      - name: Load Terraform variables
+        uses: ./.github/actions/load-tf-vars
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Terraform and authenticate
         uses: ./.github/actions/terraform-setup

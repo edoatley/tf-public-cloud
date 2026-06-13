@@ -3,7 +3,7 @@
 # the public key as a base64-encoded GitHub Actions variable.
 set -euo pipefail
 
-KEY_FILE="$(mktemp -d)/vm_deploy_key"
+KEY_FILE="${HOME}/.ssh/vm_deploy_key"
 REPO="${GITHUB_REPOSITORY:-}"
 
 if [ -z "$REPO" ]; then
@@ -16,8 +16,20 @@ if [ -z "$REPO" ]; then
   exit 1
 fi
 
+mkdir -p "${HOME}/.ssh" && chmod 700 "${HOME}/.ssh"
+
+if [ -f "$KEY_FILE" ]; then
+  echo "WARNING: ${KEY_FILE} already exists. Overwrite? [y/N] "
+  read -r CONFIRM
+  if [[ "${CONFIRM}" != "y" && "${CONFIRM}" != "Y" ]]; then
+    echo "Aborted."
+    exit 1
+  fi
+fi
+
 echo "Generating RSA 4096-bit SSH key pair..."
 ssh-keygen -t rsa -b 4096 -f "$KEY_FILE" -N "" -C "vm-deploy-key" >/dev/null
+chmod 600 "$KEY_FILE"
 
 echo "Base64-encoding public key..."
 if [[ "$(uname)" == "Darwin" ]]; then
@@ -30,11 +42,9 @@ echo "Setting SSH_PUBLIC_KEY variable on ${REPO}..."
 gh variable set SSH_PUBLIC_KEY --body "$B64" --repo "$REPO"
 
 echo ""
-echo "Done. Your private key is at: ${KEY_FILE}"
-echo ""
-echo "Save it somewhere secure (e.g. 1Password, ~/.ssh/vm_deploy_key) then delete the temp file:"
-echo "  cp ${KEY_FILE} ~/.ssh/vm_deploy_key && chmod 600 ~/.ssh/vm_deploy_key"
-echo "  rm -f ${KEY_FILE} ${KEY_FILE}.pub"
+echo "Done."
+echo "  Private key: ${KEY_FILE}"
+echo "  Public key:  ${KEY_FILE}.pub"
 echo ""
 echo "To use locally with a VM module:"
-echo "  terraform plan -var=\"ssh_public_key=\$(cat ~/.ssh/vm_deploy_key.pub)\""
+echo "  terraform plan -var=\"ssh_public_key=\$(cat ${KEY_FILE}.pub)\""
