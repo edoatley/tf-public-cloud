@@ -32,10 +32,10 @@ on:
 permissions:
   contents: read
   id-token: write
-  actions: read
 
 env:
   TF_IN_AUTOMATION: "true"
+  TF_VAR_ssh_public_key_b64: ${{ vars.SSH_PUBLIC_KEY }}
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -49,11 +49,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Load Terraform variables
-        uses: ./.github/actions/load-tf-vars
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Terraform and authenticate
         uses: ./.github/actions/terraform-setup
@@ -80,11 +75,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Load Terraform variables
-        uses: ./.github/actions/load-tf-vars
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Setup Terraform and authenticate
         uses: ./.github/actions/terraform-setup
         with:
@@ -107,14 +97,11 @@ jobs:
     if: inputs.cloud == 'azure' || inputs.cloud == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Load Terraform variables
-        uses: ./.github/actions/load-tf-vars
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Terraform and authenticate
         uses: ./.github/actions/terraform-setup

@@ -25,12 +25,12 @@ permissions:
   contents: read
   pull-requests: write
   id-token: write
-  actions: read
 
 env:
   TF_IN_AUTOMATION: "true"
   TF_CLI_ARGS_plan: "-input=false"
   TF_CLI_ARGS_apply: "-input=false"
+  TF_VAR_ssh_public_key_b64: ${{ vars.SSH_PUBLIC_KEY }}
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -123,14 +123,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: detect
     if: needs.detect.outputs.skip != 'true'
+    env:
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Load Terraform variables
-        uses: ./.github/actions/load-tf-vars
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Terraform and authenticate
         uses: ./.github/actions/terraform-setup
@@ -174,14 +171,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [detect, validate]
     if: needs.detect.outputs.skip != 'true'
+    env:
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Load Terraform variables
-        uses: ./.github/actions/load-tf-vars
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Terraform and authenticate
         uses: ./.github/actions/terraform-setup
@@ -261,14 +255,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [detect, plan]
     if: needs.detect.outputs.skip != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Load Terraform variables
-        uses: ./.github/actions/load-tf-vars
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Terraform and authenticate
         uses: ./.github/actions/terraform-setup

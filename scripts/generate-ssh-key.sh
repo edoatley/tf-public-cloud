@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One-time setup: generate an SSH key pair for VM deployments and store
-# the public key as a base64-encoded GitHub Actions variable.
+# the public key as a GitHub Actions variable (plain text).
 set -euo pipefail
 
 KEY_FILE="${HOME}/.ssh/vm_deploy_key"
@@ -31,15 +31,8 @@ echo "Generating RSA 4096-bit SSH key pair..."
 ssh-keygen -t rsa -b 4096 -f "$KEY_FILE" -N "" -C "vm-deploy-key" >/dev/null
 chmod 600 "$KEY_FILE"
 
-echo "Base64-encoding public key..."
-if [[ "$(uname)" == "Darwin" ]]; then
-  B64=$(base64 -i "${KEY_FILE}.pub")
-else
-  B64=$(base64 -w0 "${KEY_FILE}.pub")
-fi
-
 echo "Setting SSH_PUBLIC_KEY variable on ${REPO}..."
-gh variable set SSH_PUBLIC_KEY --body "$B64" --repo "$REPO"
+gh variable set SSH_PUBLIC_KEY --body "$(cat "${KEY_FILE}.pub")" --repo "$REPO"
 
 echo ""
 echo "Done."
@@ -47,4 +40,4 @@ echo "  Private key: ${KEY_FILE}"
 echo "  Public key:  ${KEY_FILE}.pub"
 echo ""
 echo "To use locally with a VM module:"
-echo "  terraform plan -var=\"ssh_public_key=\$(cat ${KEY_FILE}.pub)\""
+echo "  terraform plan -var=\"ssh_public_key_b64=\$(base64 -i ${KEY_FILE}.pub)\""

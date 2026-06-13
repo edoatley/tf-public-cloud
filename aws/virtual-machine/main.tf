@@ -24,7 +24,7 @@ data "aws_ami" "amazon_linux_2023" {
 
 resource "aws_key_pair" "this" {
   key_name   = "${var.name_prefix}-${random_id.suffix.hex}"
-  public_key = var.ssh_public_key
+  public_key = base64decode(var.ssh_public_key_b64)
 }
 
 resource "aws_vpc" "this" {

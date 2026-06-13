@@ -33,8 +33,8 @@ variable "network_cidr" {
   default     = "10.0.0.0/16"
 }
 
-variable "ssh_public_key" {
-  description = "OpenSSH public key to install on the instance. Injected via TF_VAR_ssh_public_key in CI."
+variable "ssh_public_key_b64" {
+  description = "Base64-encoded OpenSSH public key to install on the instance. Injected via TF_VAR_ssh_public_key_b64 in CI."
   type        = string
   sensitive   = true
 }

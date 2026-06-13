@@ -62,6 +62,6 @@ resource "google_compute_instance" "this" {
   }
 
   metadata = {
-    ssh-keys = "debian:${var.ssh_public_key}"
+    ssh-keys = "debian:${base64decode(var.ssh_public_key_b64)}"
   }
 }
