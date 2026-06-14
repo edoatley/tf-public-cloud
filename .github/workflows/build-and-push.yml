@@ -1,0 +1,134 @@
+name: Build and Push Container Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      cloud:
+        description: "Cloud registry to push to"
+        required: true
+        type: choice
+        options:
+          - aws
+          - gcp
+          - azure
+          - all
+      image_tag:
+        description: "Docker image tag (defaults to 'latest'; use github.sha for reproducible tags)"
+        required: false
+        default: "latest"
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # aws — push to ECR
+  # ---------------------------------------------------------------------------
+  push-aws:
+    name: "Push to ECR (AWS)"
+    if: inputs.cloud == 'aws' || inputs.cloud == 'all'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Authenticate to AWS
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Get ECR repository URL
+        id: ecr
+        run: |
+          REPO_URL=$(aws ecr describe-repositories \
+            --repository-names tf-public-cloud-app \
+            --region "${{ vars.AWS_REGION }}" \
+            --query 'repositories[0].repositoryUri' \
+            --output text)
+          echo "repo_url=${REPO_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Docker login to ECR
+        run: |
+          aws ecr get-login-password --region "${{ vars.AWS_REGION }}" \
+            | docker login --username AWS --password-stdin "${{ steps.ecr.outputs.repo_url }}"
+
+      - name: Build and push
+        working-directory: app
+        run: |
+          IMAGE="${{ steps.ecr.outputs.repo_url }}:${{ inputs.image_tag }}"
+          docker build -t "${IMAGE}" .
+          docker push "${IMAGE}"
+
+  # ---------------------------------------------------------------------------
+  # gcp — push to Artifact Registry
+  # ---------------------------------------------------------------------------
+  push-gcp:
+    name: "Push to Artifact Registry (GCP)"
+    if: inputs.cloud == 'gcp' || inputs.cloud == 'all'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker europe-west2-docker.pkg.dev --quiet
+
+      - name: Build and push
+        working-directory: app
+        env:
+          REGISTRY_URL: "europe-west2-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/tf-public-cloud-app"
+        run: |
+          IMAGE="${REGISTRY_URL}/tf-public-cloud-app:${{ inputs.image_tag }}"
+          docker build -t "${IMAGE}" .
+          docker push "${IMAGE}"
+
+  # ---------------------------------------------------------------------------
+  # azure — push to ACR
+  # ---------------------------------------------------------------------------
+  push-azure:
+    name: "Push to ACR (Azure)"
+    if: inputs.cloud == 'azure' || inputs.cloud == 'all'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: default
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Authenticate to Azure
+        uses: ./.github/actions/cloud-login
+        with:
+          cloud: azure
+          azure_client_id: ${{ vars.AZURE_CLIENT_ID }}
+          azure_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+          azure_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Get ACR login server
+        id: acr
+        run: |
+          LOGIN_SERVER=$(az acr show \
+            --name "tfpubcloudacredoatley" \
+            --query loginServer \
+            --output tsv)
+          echo "login_server=${LOGIN_SERVER}" >> "$GITHUB_OUTPUT"
+
+      - name: Docker login to ACR
+        run: az acr login --name "tfpubcloudacredoatley"
+
+      - name: Build and push
+        working-directory: app
+        run: |
+          IMAGE="${{ steps.acr.outputs.login_server }}/tf-public-cloud-app:${{ inputs.image_tag }}"
+          docker build -t "${IMAGE}" .
+          docker push "${IMAGE}"

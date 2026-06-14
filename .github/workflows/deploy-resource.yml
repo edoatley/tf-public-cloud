@@ -11,6 +11,8 @@ on:
           - smoke-test
           - object-storage
           - virtual-machine
+          - container-registry
+          - containerised-app
       cloud:
         description: "Cloud to target"
         required: true
@@ -72,6 +74,8 @@ jobs:
     if: inputs.cloud == 'gcp' || inputs.cloud == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      TF_VAR_ci_service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
     steps:
       - uses: actions/checkout@v6
