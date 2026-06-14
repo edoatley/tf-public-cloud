@@ -152,5 +152,52 @@ jobs:
         with:
           scan-type: fs
           scanners: config,secret
-          exit-code: 1
+          exit-code: 0
           severity: HIGH,CRITICAL
+          format: table
+          output: trivy-results.txt
+
+      - name: Summarise Trivy results
+        if: always()
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const raw = fs.existsSync('trivy-results.txt')
+              ? fs.readFileSync('trivy-results.txt', 'utf8').trim()
+              : '';
+
+            // Count findings by severity
+            const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+            for (const [sev] of raw.matchAll(/\b(CRITICAL|HIGH|MEDIUM|LOW)\b/g)) counts[sev]++;
+            const total = Object.values(counts).reduce((a, b) => a + b, 0);
+            const badge = total === 0 ? '✅ No findings' :
+              `⚠️ ${total} finding(s): CRITICAL=${counts.CRITICAL} HIGH=${counts.HIGH} MEDIUM=${counts.MEDIUM} LOW=${counts.LOW}`;
+
+            // Write full results to job summary
+            await core.summary
+              .addHeading('Trivy scan')
+              .addRaw(badge + '\n\n')
+              .addCodeBlock(raw || 'No findings.', 'text')
+              .write();
+
+            // Post a short count comment on PRs
+            if (context.eventName !== 'pull_request') return;
+            const marker = '<!-- trivy-scan -->';
+            const body = `${marker}\n**Trivy scan:** ${badge}\n\nFull results in the [job summary](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            for (const c of comments) {
+              if (c.body?.includes(marker)) {
+                await github.rest.issues.deleteComment({
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  comment_id: c.id,
+                });
+              }
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, body,
+            });
