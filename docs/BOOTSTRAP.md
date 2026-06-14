@@ -59,9 +59,9 @@ gh auth login
 - Creates the S3 state bucket with versioning, SSE-AES256, public-access-block, and HTTPS-only bucket policy
 - State locking uses S3 native locking (`use_lockfile = true`) — no DynamoDB table is required
 - Creates the GitHub Actions OIDC Identity Provider (`token.actions.githubusercontent.com`) if not already present
-- Creates two IAM roles:
-  - `github-tf-public-cloud-plan` — trusted on pull requests and pushes to `main` (used for `validate` and `plan` jobs)
-  - `github-tf-public-cloud-apply` — trusted on pushes to `main` only (used for `apply` job)
+- Creates two IAM roles, both trusted for any branch/event in this repo (`repo:edoatley/tf-public-cloud:*`):
+  - `github-tf-public-cloud-plan` — used for `validate` and `plan` jobs
+  - `github-tf-public-cloud-apply` — used for `apply` jobs (apply is gated in the workflow to `main` pushes only, not in the trust policy)
 - Applies inline policies from `scripts/iam/aws-plan-policy.json` and `scripts/iam/aws-apply-policy.json` via `scripts/bootstrap/apply-aws-iam-policy.sh`
 
 All resource names are pre-configured for this repo. Edit the variables at the top of the script if you need to change them.
@@ -141,9 +141,8 @@ gh variable set GCP_PROJECT_ID      --body "gcp-sandbox-2026-18798"
 - Creates the Resource Group, Storage Account (HTTPS-only, TLS 1.2, versioning enabled), and Blob Container for Terraform state
 - Creates the examples Resource Group
 - Creates an App Registration and Service Principal for GitHub Actions OIDC authentication
-- Adds Federated Credentials:
-  - `github-main` — trusted on pushes and `workflow_dispatch` from `main`
-  - `github-pr` — trusted on pull requests
+- Creates a `default` GitHub Actions environment in the repository (required for the federated credential)
+- Adds a single Federated Credential `GHA-Default-Creds` scoped to `environment:default`, which covers all branches and pull requests — Azure does not support wildcard subjects spanning multiple colon-separated segments (`repo:org/repo:*` does not match branch subjects), so an environment credential is the correct approach
 - Assigns RBAC roles from `scripts/iam/azure-permissions.json` via `scripts/bootstrap/apply-azure-rbac.sh`
 
 All resource names are pre-configured for this repo. Edit the variables at the top of the script if you need to change them. You must be authenticated as an Owner (or equivalent) on the target subscription.

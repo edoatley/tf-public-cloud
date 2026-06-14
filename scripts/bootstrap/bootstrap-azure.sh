@@ -6,9 +6,10 @@
 #   1. Creates the Resource Group and Storage Account for Terraform state
 #   2. Creates the Blob Container for state files
 #   3. Creates an App Registration and Service Principal for GitHub Actions
-#   4. Adds Federated Credentials for main branch (apply) and pull requests (plan)
-#   5. Creates the examples Resource Group
-#   6. Applies RBAC assignments from scripts/iam/azure-permissions.json
+#   4. Creates a 'default' GitHub Actions environment
+#   5. Adds a Federated Credential for the 'default' environment (covers all branches)
+#   6. Creates the examples Resource Group
+#   7. Applies RBAC assignments from scripts/iam/azure-permissions.json
 #
 # Usage:
 #   ./scripts/bootstrap-azure.sh
@@ -147,6 +148,19 @@ else
   az ad sp create --id "${APP_ID}" --output none
 fi
 
+# ---------- GitHub Environment ----------
+
+echo ""
+echo "==> [GitHub] Setting up 'default' environment"
+
+if gh api "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/default" --silent 2>/dev/null; then
+  echo "[SKIP] GitHub environment 'default' already exists."
+else
+  echo "[CREATE] Creating GitHub environment 'default'..."
+  gh api --method PUT "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/default" --silent
+  echo "[OK] Created."
+fi
+
 # ---------- Federated Credentials ----------
 
 echo ""
@@ -177,11 +191,14 @@ add_federated_credential() {
   fi
 }
 
-# All branches and pull requests
+# GitHub Actions environment — covers all branches and pull requests that run
+# jobs with 'environment: default'. Azure does not support wildcard subjects
+# that span multiple colon-separated segments, so an environment credential is
+# the cleanest way to trust any branch without per-branch credentials.
 add_federated_credential \
-  "github-all-branches" \
-  "repo:${GITHUB_ORG}/${GITHUB_REPO}:*" \
-  "GitHub Actions — all branches and pull requests"
+  "GHA-Default-Creds" \
+  "repo:${GITHUB_ORG}/${GITHUB_REPO}:environment:default" \
+  "GitHub Actions — default environment (all branches)"
 
 # ---------- RBAC assignments (service principal) ----------
 

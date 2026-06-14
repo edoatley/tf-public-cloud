@@ -41,6 +41,34 @@
       "Resource": [
         "arn:aws:s3:::*"
       ]
+    },
+    {
+      "Sid": "EC2ExampleRead",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeImages",
+        "ec2:DescribeInstances",
+        "ec2:DescribeInstanceAttribute",
+        "ec2:DescribeInstanceTypes",
+        "ec2:DescribeInstanceCreditSpecifications",
+        "ec2:DescribeVpcs",
+        "ec2:DescribeVpcAttribute",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeSecurityGroups",
+        "ec2:DescribeSecurityGroupRules",
+        "ec2:DescribeKeyPairs",
+        "ec2:DescribeRouteTables",
+        "ec2:DescribeInternetGateways",
+        "ec2:DescribeNetworkInterfaces",
+        "ec2:DescribeAddresses",
+        "ec2:DescribeVolumes",
+        "ec2:DescribeVpcClassicLink",
+        "ec2:DescribeVpcClassicLinkDnsSupport",
+        "ec2:DescribeAvailabilityZones",
+        "ec2:DescribeAccountAttributes",
+        "ec2:DescribeTags"
+      ],
+      "Resource": "*"
     }
   ]
 }

@@ -67,6 +67,7 @@ jobs:
     name: Test Azure OIDC auth
     if: inputs.cloud == 'azure' || inputs.cloud == 'all'
     runs-on: ubuntu-latest
+    environment: default
     steps:
       - name: Authenticate
         uses: azure/login@v3

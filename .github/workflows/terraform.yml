@@ -123,6 +123,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: detect
     if: needs.detect.outputs.skip != 'true'
+    environment: default
     env:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
@@ -171,6 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [detect, validate]
     if: needs.detect.outputs.skip != 'true'
+    environment: default
     env:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
@@ -255,6 +257,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [detect, plan]
     if: needs.detect.outputs.skip != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: default
     env:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 

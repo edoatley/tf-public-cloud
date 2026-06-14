@@ -97,6 +97,7 @@ jobs:
     if: inputs.cloud == 'azure' || inputs.cloud == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: default
     env:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
