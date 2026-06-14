@@ -20,6 +20,9 @@
       - [GCP](#gcp)
       - [Azure](#azure)
   - [Connecting to a VM](#connecting-to-a-vm)
+    - [AWS (SSH)](#aws-ssh)
+    - [GCP (SSH)](#gcp-ssh)
+    - [Azure (SSH)](#azure-ssh)
     - [Summary of differences](#summary-of-differences)
 
 ## Introduction
@@ -31,7 +34,7 @@ Comparison of the virtual-machine example across all three clouds. Each module p
 |                         | AWS                           | GCP                              | Azure                          |
 | ----------------------- | ----------------------------- | -------------------------------- | ------------------------------ |
 | **Module path**         | `aws/virtual-machine`         | `gcp/virtual-machine`            | `azure/virtual-machine`        |
-| **Instance type**       | `t3.micro` (1 vCPU, 1 GB)     | `e2-micro` (1 vCPU shared, 1 GB) | `Standard_B1s` (1 vCPU, 1 GB)  |
+| **Instance type**       | `t3.micro` (1 vCPU, 1 GB)     | `e2-micro` (1 vCPU shared, 1 GB) | `Standard_D2s_v3` (2 vCPU, 8 GB) |
 | **Operating system**    | Amazon Linux 2023             | Debian 12                        | Ubuntu 22.04 LTS (gen2)        |
 | **Network**             | VPC + public subnet           | Custom VPC + subnetwork          | VNet + subnet                  |
 | **Firewall**            | Security Group (TCP 22)       | Firewall rule + network tag      | NSG inline rule (TCP 22)       |
@@ -40,8 +43,6 @@ Comparison of the virtual-machine example across all three clouds. Each module p
 | **Default SSH user**    | `ec2-user`                    | `debian`                         | `azureuser`                    |
 | **Root disk**           | 8 GB gp3                      | 10 GB pd-standard                | Standard_LRS (OS disk default) |
 | **Tagging / labelling** | `default_tags` on provider    | `labels` on resources            | `tags` on all resources        |
-
----
 
 ## Concepts and terminology
 
@@ -97,8 +98,6 @@ Each cloud resolves the base operating system image differently.
 
 **Azure** references images via a publisher/offer/SKU/version tuple in the `source_image_reference` block. Setting `version = "latest"` tells the Azure platform to resolve the most recent image in that SKU at deployment time. The Ubuntu 22.04 LTS offer from Canonical is `0001-com-ubuntu-server-jammy` (Canonical restructured their Azure publishing in 2022; this is the current offer name). The `22_04-lts-gen2` SKU selects the Generation 2 variant, which supports Secure Boot and modern VM features.
 
----
-
 ## AWS - EC2 Instance
 
 **Required variables:**
@@ -121,8 +120,6 @@ Each cloud resolves the base operating system image differently.
 - The AMI is resolved at plan time via a data source — no hardcoded AMI ID
 - The root volume uses `gp3` (the current-generation SSD type) with `delete_on_termination = true` to avoid orphaned EBS volumes after `terraform destroy`
 - The security group uses inline `ingress`/`egress` blocks rather than separate `aws_security_group_rule` resources, keeping the module self-contained
-
----
 
 ## GCP - Compute Engine Instance
 
@@ -147,8 +144,6 @@ Each cloud resolves the base operating system image differently.
 - SSH access is scoped to tagged instances via `target_tags = ["ssh-enabled"]` on the firewall rule, rather than opening SSH to the entire VPC
 - The boot disk uses `pd-standard` (magnetic) rather than `pd-ssd` to minimise cost for a demo instance; the image is resolved dynamically via the `debian-12` image family
 
----
-
 ## Azure - Linux Virtual Machine
 
 **Required variables:**
@@ -158,8 +153,8 @@ Each cloud resolves the base operating system image differently.
 
 **Optional variables (all have defaults):**
 
-- `location` — defaults to `uksouth`
-- `vm_size` — defaults to `Standard_B1s`
+- `location` — defaults to `westeurope`
+- `vm_size` — defaults to `Standard_D2s_v3`
 - `admin_username` — defaults to `azureuser`
 - `address_space` — defaults to `10.0.0.0/16`
 - `subnet_prefix` — defaults to `10.0.1.0/24`
@@ -176,8 +171,6 @@ Each cloud resolves the base operating system image differently.
 - `depends_on = [azurerm_network_interface_security_group_association.this]` on the VM ensures the NSG is fully attached before the instance boots
 - The public IP uses `sku = "Standard"` with `allocation_method = "Static"` — Standard SKU is the current recommended default; Basic SKU is being retired
 
----
-
 ## SSH key setup
 
 The modules do not generate SSH keys. You supply a pre-existing public key, which keeps key material out of Terraform state entirely.
@@ -193,8 +186,6 @@ This generates an RSA 4096-bit key pair at `~/.ssh/vm_deploy_key`, base64-encode
 ```sh
 terraform plan -var="ssh_public_key=$(cat ~/.ssh/vm_deploy_key.pub)"
 ```
-
----
 
 ## Deploying
 
@@ -263,30 +254,150 @@ terraform -chdir=azure/virtual-machine apply \
   -var="ssh_public_key=$(cat ~/.ssh/vm_deploy_key.pub)"
 ```
 
----
-
 ## Connecting to a VM
 
-After a successful apply, retrieve the SSH command from the outputs:
+After a successful apply, use the helper scripts in `scripts/examples/` to connect and verify the VM is healthy. Each script takes the public IP and private key path, then prints the root directory listing, hostname, and OS release before exiting.
+
+### AWS (SSH)
 
 ```sh
-# AWS
-terraform -chdir=aws/virtual-machine output -raw ssh_connect_string
-
-# GCP
-terraform -chdir=gcp/virtual-machine output -raw ssh_connect_string
-
-# Azure
-terraform -chdir=azure/virtual-machine output -raw ssh_connect_string
+IP=$(terraform -chdir=aws/virtual-machine output -raw public_ip)
+./scripts/examples/virtual-machine-aws.sh "$IP" ~/.ssh/vm_deploy_key
 ```
 
-Each output prints a command of the form `ssh -i <private_key> <user>@<ip>`. Substitute your private key path:
+<details>
+<summary>Example AWS output</summary>
+
+```terminaloutput
+==> Connecting to ec2-user@18.132.97.48
+==> Root directory listing
+Warning: Permanently added '18.132.97.48' (ED25519) to the list of known hosts.
+total 32
+dr-xr-xr-x.  18 root root   237 Jun 11 01:49 .
+dr-xr-xr-x.  18 root root   237 Jun 11 01:49 ..
+lrwxrwxrwx.   1 root root     7 Jan 30  2023 bin -> usr/bin
+dr-xr-xr-x.   5 root root 16384 Jun 11 01:50 boot
+drwxr-xr-x.  14 root root  3100 Jun 14 10:45 dev
+drwxr-xr-x.  59 root root 16384 Jun 14 10:45 etc
+drwxr-xr-x.   3 root root    22 Jun 14 10:45 home
+lrwxrwxrwx.   1 root root     7 Jan 30  2023 lib -> usr/lib
+lrwxrwxrwx.   1 root root     9 Jan 30  2023 lib64 -> usr/lib64
+drwxr-xr-x.   2 root root     6 Jun 11 01:49 local
+drwxr-xr-x.   2 root root     6 Jan 30  2023 media
+drwxr-xr-x.   2 root root     6 Jan 30  2023 mnt
+drwxr-xr-x.   2 root root     6 Jan 30  2023 opt
+dr-xr-xr-x. 154 root root     0 Jun 14 10:45 proc
+dr-xr-x---.   3 root root   103 Jun 11 01:50 root
+drwxr-xr-x.  25 root root   640 Jun 14 10:46 run
+lrwxrwxrwx.   1 root root     8 Jan 30  2023 sbin -> usr/sbin
+drwxr-xr-x.   2 root root     6 Jan 30  2023 srv
+dr-xr-xr-x.  13 root root     0 Jun 14 10:45 sys
+drwxrwxrwt.  11 root root   220 Jun 14 12:37 tmp
+drwxr-xr-x.  12 root root   144 Jun 11 01:49 usr
+drwxr-xr-x.  18 root root   251 Jun 14 10:45 var
+==> Hostname
+ip-10-0-1-68.eu-west-2.compute.internal
+==> OS release
+PRETTY_NAME="Amazon Linux 2023.12.20260611"
+==> Done
+```
+
+</details>
+
+### GCP (SSH)
 
 ```sh
-ssh -i ~/.ssh/vm_deploy_key ec2-user@<aws-public-ip>
-ssh -i ~/.ssh/vm_deploy_key debian@<gcp-public-ip>
-ssh -i ~/.ssh/vm_deploy_key azureuser@<azure-public-ip>
+IP=$(terraform -chdir=gcp/virtual-machine output -raw public_ip)
+./scripts/examples/virtual-machine-gcp.sh "$IP" ~/.ssh/vm_deploy_key
 ```
+
+<details>
+<summary>Example GCP output</summary>
+
+```terminaloutput
+==> Connecting to debian@34.105.247.227
+==> Root directory listing
+Warning: Permanently added '34.105.247.227' (ED25519) to the list of known hosts.
+total 68
+drwxr-xr-x  18 root root  4096 Jun 14 11:58 .
+drwxr-xr-x  18 root root  4096 Jun 14 11:58 ..
+lrwxrwxrwx   1 root root     7 Jun  9 15:05 bin -> usr/bin
+drwxr-xr-x   4 root root  4096 Jun  9 15:08 boot
+drwxr-xr-x  14 root root  3060 Jun 14 11:58 dev
+drwxr-xr-x  76 root root  4096 Jun 14 11:59 etc
+drwxr-xr-x   3 root root  4096 Jun 14 11:59 home
+lrwxrwxrwx   1 root root     7 Jun  9 15:05 lib -> usr/lib
+lrwxrwxrwx   1 root root     9 Jun  9 15:05 lib64 -> usr/lib64
+drwx------   2 root root 16384 Jun  9 15:04 lost+found
+drwxr-xr-x   2 root root  4096 Jun  9 15:05 media
+drwxr-xr-x   2 root root  4096 Jun  9 15:05 mnt
+drwxr-xr-x   2 root root  4096 Jun  9 15:05 opt
+dr-xr-xr-x 141 root root     0 Jun 14 11:58 proc
+drwx------   3 root root  4096 Jun  9 15:07 root
+drwxr-xr-x  23 root root   640 Jun 14 12:37 run
+lrwxrwxrwx   1 root root     8 Jun  9 15:05 sbin -> usr/sbin
+drwxr-xr-x   2 root root  4096 Jun  9 15:05 srv
+dr-xr-xr-x  13 root root     0 Jun 14 11:58 sys
+drwxrwxrwt  10 root root  4096 Jun 14 11:59 tmp
+drwxr-xr-x  12 root root  4096 Jun  9 15:05 usr
+drwxr-xr-x  12 root root  4096 Jun  9 15:06 var
+==> Hostname
+tf-public-cloud-vm-76ac
+==> OS release
+PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
+==> Done
+```
+
+</details>
+
+### Azure (SSH)
+
+```sh
+IP=$(terraform -chdir=azure/virtual-machine output -raw public_ip)
+./scripts/examples/virtual-machine-azure.sh "$IP" ~/.ssh/vm_deploy_key
+```
+
+<details>
+<summary>Example Azure output</summary>
+
+```terminaloutput
+==> Connecting to azureuser@20.224.139.249
+==> Root directory listing
+Warning: Permanently added '20.224.139.249' (ED25519) to the list of known hosts.
+total 72
+drwxr-xr-x  19 root root  4096 Jun 14 12:26 .
+drwxr-xr-x  19 root root  4096 Jun 14 12:26 ..
+lrwxrwxrwx   1 root root     7 Jun 11 07:49 bin -> usr/bin
+drwxr-xr-x   4 root root  4096 Jun 11 07:57 boot
+drwxr-xr-x  17 root root  4040 Jun 14 12:26 dev
+drwxr-xr-x  99 root root  4096 Jun 14 12:26 etc
+drwxr-xr-x   3 root root  4096 Jun 14 12:26 home
+lrwxrwxrwx   1 root root     7 Jun 11 07:49 lib -> usr/lib
+lrwxrwxrwx   1 root root     9 Jun 11 07:49 lib32 -> usr/lib32
+lrwxrwxrwx   1 root root     9 Jun 11 07:49 lib64 -> usr/lib64
+lrwxrwxrwx   1 root root    10 Jun 11 07:49 libx32 -> usr/libx32
+drwx------   2 root root 16384 Jun 11 07:53 lost+found
+drwxr-xr-x   2 root root  4096 Jun 11 07:49 media
+drwxr-xr-x   3 root root  4096 Jun 14 12:26 mnt
+drwxr-xr-x   2 root root  4096 Jun 11 07:49 opt
+dr-xr-xr-x 173 root root     0 Jun 14 12:26 proc
+drwx------   4 root root  4096 Jun 14 12:26 root
+drwxr-xr-x  27 root root   900 Jun 14 12:37 run
+lrwxrwxrwx   1 root root     8 Jun 11 07:49 sbin -> usr/sbin
+drwxr-xr-x   6 root root  4096 Jun 11 07:57 snap
+drwxr-xr-x   2 root root  4096 Jun 11 07:49 srv
+dr-xr-xr-x  12 root root     0 Jun 14 12:26 sys
+drwxrwxrwt  11 root root  4096 Jun 14 12:32 tmp
+drwxr-xr-x  14 root root  4096 Jun 11 07:49 usr
+drwxr-xr-x  13 root root  4096 Jun 11 07:51 var
+==> Hostname
+tfpubcloudvm-8a90
+==> OS release
+PRETTY_NAME="Ubuntu 22.04.5 LTS"
+==> Done
+```
+
+</details>
 
 ### Summary of differences
 
