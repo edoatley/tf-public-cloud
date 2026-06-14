@@ -120,12 +120,15 @@ fi
 
 # ---------- IAM roles ----------
 
-create_role_if_missing() {
+create_or_update_role() {
   local ROLE_NAME="$1"
   local TRUST_POLICY="$2"
 
   if aws iam get-role --role-name "${ROLE_NAME}" 2>/dev/null | grep -q RoleName; then
-    echo "[SKIP] Role '${ROLE_NAME}' already exists."
+    echo "[UPDATE] Role '${ROLE_NAME}' already exists — updating trust policy..."
+    aws iam update-assume-role-policy \
+      --role-name "${ROLE_NAME}" \
+      --policy-document "${TRUST_POLICY}"
   else
     echo "[CREATE] Creating IAM role '${ROLE_NAME}'..."
     aws iam create-role \
@@ -152,10 +155,7 @@ PLAN_TRUST=$(cat <<EOF
         "token.actions.githubusercontent.com:aud": "${OIDC_AUDIENCE}"
       },
       "StringLike": {
-        "token.actions.githubusercontent.com:sub": [
-          "repo:${GITHUB_ORG}/${GITHUB_REPO}:pull_request",
-          "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/main"
-        ]
+        "token.actions.githubusercontent.com:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:*"
       }
     }
   }]
@@ -177,7 +177,7 @@ APPLY_TRUST=$(cat <<EOF
         "token.actions.githubusercontent.com:aud": "${OIDC_AUDIENCE}"
       },
       "StringLike": {
-        "token.actions.githubusercontent.com:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/main"
+        "token.actions.githubusercontent.com:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:*"
       }
     }
   }]
@@ -185,8 +185,8 @@ APPLY_TRUST=$(cat <<EOF
 EOF
 )
 
-create_role_if_missing "${PLAN_ROLE_NAME}"  "${PLAN_TRUST}"
-create_role_if_missing "${APPLY_ROLE_NAME}" "${APPLY_TRUST}"
+create_or_update_role "${PLAN_ROLE_NAME}"  "${PLAN_TRUST}"
+create_or_update_role "${APPLY_ROLE_NAME}" "${APPLY_TRUST}"
 
 # ---------- Inline policies ----------
 
@@ -205,8 +205,8 @@ apply_policy() {
     --policy-document "file://${POLICY_FILE}"
 }
 
-apply_policy "${PLAN_ROLE_NAME}"  "${SCRIPT_DIR}/iam/aws-plan-policy.json"
-apply_policy "${APPLY_ROLE_NAME}" "${SCRIPT_DIR}/iam/aws-apply-policy.json"
+apply_policy "${PLAN_ROLE_NAME}"  "${SCRIPT_DIR}/../iam/aws-plan-policy.json"
+apply_policy "${APPLY_ROLE_NAME}" "${SCRIPT_DIR}/../iam/aws-apply-policy.json"
 
 # ---------- Summary ----------
 

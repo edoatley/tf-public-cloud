@@ -22,6 +22,7 @@ The following tools must be installed before running any bootstrap script.
 | ---- | ----------- | ------- | ------- |
 | `terraform` | 1.6 | Provisions cloud resources | `brew install tfenv` - a `.terraform-version` file is used to set the version to be used |
 | `tflint` | 0.50+ | Lints Terraform code in CI | `brew install tflint` |
+| `trivy` | latest | IaC misconfiguration scanning (local, on-demand) | `brew install trivy` |
 | `aws` CLI | 2.x | AWS bootstrap and auth | `brew install awscli` |
 | `gcloud` CLI | latest | GCP bootstrap and auth | `brew install --cask google-cloud-sdk` |
 | `az` CLI | 2.50+ | Azure bootstrap and auth | `brew install azure-cli` |
@@ -53,21 +54,21 @@ gh auth login
 
 ### Step 1a - Run the bootstrap script
 
-`scripts/bootstrap-aws.sh` handles everything in one go:
+`scripts/bootstrap/bootstrap-aws.sh` handles everything in one go:
 
 - Creates the S3 state bucket with versioning, SSE-AES256, public-access-block, and HTTPS-only bucket policy
 - State locking uses S3 native locking (`use_lockfile = true`) — no DynamoDB table is required
 - Creates the GitHub Actions OIDC Identity Provider (`token.actions.githubusercontent.com`) if not already present
-- Creates two IAM roles:
-  - `github-tf-public-cloud-plan` — trusted on pull requests and pushes to `main` (used for `validate` and `plan` jobs)
-  - `github-tf-public-cloud-apply` — trusted on pushes to `main` only (used for `apply` job)
-- Applies inline policies from `scripts/iam/aws-plan-policy.json` and `scripts/iam/aws-apply-policy.json`
+- Creates two IAM roles, both trusted for any branch/event in this repo (`repo:edoatley/tf-public-cloud:*`):
+  - `github-tf-public-cloud-plan` — used for `validate` and `plan` jobs
+  - `github-tf-public-cloud-apply` — used for `apply` jobs (apply is gated in the workflow to `main` pushes only, not in the trust policy)
+- Applies inline policies from `scripts/iam/aws-plan-policy.json` and `scripts/iam/aws-apply-policy.json` via `scripts/bootstrap/apply-aws-iam-policy.sh`
 
 All resource names are pre-configured for this repo. Edit the variables at the top of the script if you need to change them.
-The script uses the `sandbox` AWS CLI profile by default (override with `AWS_PROFILE=myprofile ./scripts/bootstrap-aws.sh`).
+The script uses the `sandbox` AWS CLI profile by default (override with `AWS_PROFILE=myprofile ./scripts/bootstrap/bootstrap-aws.sh`).
 
 ```sh
-./scripts/bootstrap-aws.sh
+./scripts/bootstrap/bootstrap-aws.sh
 ```
 
 The script prints all values you need for `backend.tf` and GitHub Variables at the end.
@@ -75,8 +76,8 @@ The script prints all values you need for `backend.tf` and GitHub Variables at t
 To update permissions later, edit the relevant JSON file and re-run:
 
 ```sh
-./scripts/apply-aws-iam-policy.sh github-tf-public-cloud-plan  scripts/iam/aws-plan-policy.json
-./scripts/apply-aws-iam-policy.sh github-tf-public-cloud-apply scripts/iam/aws-apply-policy.json
+./scripts/bootstrap/apply-aws-iam-policy.sh github-tf-public-cloud-plan  scripts/iam/aws-plan-policy.json
+./scripts/bootstrap/apply-aws-iam-policy.sh github-tf-public-cloud-apply scripts/iam/aws-apply-policy.json
 ```
 
 ### Step 1b. Set GitHub Variables for AWS
@@ -91,19 +92,19 @@ gh variable set AWS_REGION        --body "eu-west-2"
 
 ### Step 2a. Run the bootstrap script
 
-`scripts/bootstrap-gcp.sh` handles everything in one go:
+`scripts/bootstrap/bootstrap-gcp.sh` handles everything in one go:
 
 - Enables required GCP APIs: `iamcredentials`, `sts`, `cloudresourcemanager`, `storage`, `iam`
 - Creates the GCS state bucket with uniform access, versioning, and public access prevention
 - Creates a Workload Identity Pool (`github-pool`) and OIDC Provider (`github-provider`) for GitHub Actions
 - Creates the `github-actions-tf` Service Account
 - Binds the Workload Identity Provider to the Service Account
-- Applies IAM bindings from `scripts/iam/gcp-permissions.json`
+- Applies IAM bindings from `scripts/iam/gcp-permissions.json` via `scripts/bootstrap/apply-gcp-iam-bindings.sh`
 
 All resource names are pre-configured for this repo. Edit the variables at the top of the script if you need to change them.
 
 ```sh
-./scripts/bootstrap-gcp.sh
+./scripts/bootstrap/bootstrap-gcp.sh
 ```
 
 The script prints all values you need for `backend.tf` and GitHub Variables at the end.
@@ -112,12 +113,12 @@ To update permissions later, edit `scripts/iam/gcp-permissions.json` and re-run:
 
 ```sh
 # Add bindings
-./scripts/apply-gcp-iam-bindings.sh \
+./scripts/bootstrap/apply-gcp-iam-bindings.sh \
   github-actions-tf@gcp-sandbox-2026-18798.iam.gserviceaccount.com \
   scripts/iam/gcp-permissions.json
 
 # Remove bindings (e.g. after removing entries from the JSON file)
-./scripts/apply-gcp-iam-bindings.sh --remove \
+./scripts/bootstrap/apply-gcp-iam-bindings.sh --remove \
   github-actions-tf@gcp-sandbox-2026-18798.iam.gserviceaccount.com \
   scripts/iam/gcp-permissions.json
 ```
@@ -134,21 +135,20 @@ gh variable set GCP_PROJECT_ID      --body "gcp-sandbox-2026-18798"
 
 ### Step 3a. Run the bootstrap script
 
-`scripts/bootstrap-azure.sh` handles everything in one go:
+`scripts/bootstrap/bootstrap-azure.sh` handles everything in one go:
 
 - Registers the `Microsoft.Storage` and `Microsoft.Authorization` resource providers if not already enabled on the subscription
 - Creates the Resource Group, Storage Account (HTTPS-only, TLS 1.2, versioning enabled), and Blob Container for Terraform state
 - Creates the examples Resource Group
 - Creates an App Registration and Service Principal for GitHub Actions OIDC authentication
-- Adds Federated Credentials:
-  - `github-main` — trusted on pushes and `workflow_dispatch` from `main`
-  - `github-pr` — trusted on pull requests
-- Assigns RBAC roles from `scripts/iam/azure-permissions.json`
+- Creates a `default` GitHub Actions environment in the repository (required for the federated credential)
+- Adds a single Federated Credential `GHA-Default-Creds` scoped to `environment:default`, which covers all branches and pull requests — Azure does not support wildcard subjects spanning multiple colon-separated segments (`repo:org/repo:*` does not match branch subjects), so an environment credential is the correct approach
+- Assigns RBAC roles from `scripts/iam/azure-permissions.json` via `scripts/bootstrap/apply-azure-rbac.sh`
 
 All resource names are pre-configured for this repo. Edit the variables at the top of the script if you need to change them. You must be authenticated as an Owner (or equivalent) on the target subscription.
 
 ```sh
-./scripts/bootstrap-azure.sh
+./scripts/bootstrap/bootstrap-azure.sh
 ```
 
 The script prints all values you need for `backend.tf` and GitHub Variables at the end.
@@ -157,10 +157,10 @@ To update permissions later, edit `scripts/iam/azure-permissions.json` and re-ru
 
 ```sh
 # Add assignments
-./scripts/apply-azure-rbac.sh <client-id> scripts/iam/azure-permissions.json
+./scripts/bootstrap/apply-azure-rbac.sh <client-id> scripts/iam/azure-permissions.json
 
 # Remove assignments
-./scripts/apply-azure-rbac.sh --remove <client-id> scripts/iam/azure-permissions.json
+./scripts/bootstrap/apply-azure-rbac.sh --remove <client-id> scripts/iam/azure-permissions.json
 ```
 
 ### Step 3b. Set GitHub Variables for Azure
@@ -280,10 +280,10 @@ This keeps permissions reviewable as a diff rather than buried in shell logic.
 
 | Cloud | Permissions file | Apply script | Notes |
 | ----- | ---------------- | ------------ | ----- |
-| AWS (plan role) | `scripts/iam/aws-plan-policy.json` | `scripts/apply-aws-iam-policy.sh` | Replaces the full inline policy on each run |
-| AWS (apply role) | `scripts/iam/aws-apply-policy.json` | `scripts/apply-aws-iam-policy.sh` | Replaces the full inline policy on each run |
-| GCP | `scripts/iam/gcp-permissions.json` | `scripts/apply-gcp-iam-bindings.sh` | Additive — use `--remove` to remove listed bindings |
-| Azure | `scripts/iam/azure-permissions.json` | `scripts/apply-azure-rbac.sh` | Idempotent apply — use `--remove` to delete listed assignments |
+| AWS (plan role) | `scripts/iam/aws-plan-policy.json` | `scripts/bootstrap/apply-aws-iam-policy.sh` | Replaces the full inline policy on each run |
+| AWS (apply role) | `scripts/iam/aws-apply-policy.json` | `scripts/bootstrap/apply-aws-iam-policy.sh` | Replaces the full inline policy on each run |
+| GCP | `scripts/iam/gcp-permissions.json` | `scripts/bootstrap/apply-gcp-iam-bindings.sh` | Additive — use `--remove` to remove listed bindings |
+| Azure | `scripts/iam/azure-permissions.json` | `scripts/bootstrap/apply-azure-rbac.sh` | Idempotent apply — use `--remove` to delete listed assignments |
 
 **To add a permission:** add an entry to the relevant JSON file and re-run the apply script.
 
@@ -291,4 +291,4 @@ This keeps permissions reviewable as a diff rather than buried in shell logic.
 
 - *AWS*: delete the statement from the policy JSON and re-run `apply-aws-iam-policy.sh` — the whole policy is replaced atomically.
 - *GCP*: delete the entry from `gcp-permissions.json` and re-run `apply-gcp-iam-bindings.sh --remove`.
-- *Azure*: delete the entry from `azure-permissions.json` and re-run `apply-azure-rbac.sh --remove <client-id> scripts/iam/azure-permissions.json`.
+- *Azure*: delete the entry from `azure-permissions.json` and re-run `scripts/bootstrap/apply-azure-rbac.sh --remove <client-id> scripts/iam/azure-permissions.json`.

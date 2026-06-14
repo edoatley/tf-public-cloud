@@ -16,5 +16,11 @@
     "scope": "project",
     "resource": "gcp-sandbox-2026-18798",
     "comment": "Create/manage GCS buckets for the object-storage example"
+  },
+  {
+    "role": "roles/compute.admin",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage Compute Engine resources for the virtual-machine example"
   }
 ]

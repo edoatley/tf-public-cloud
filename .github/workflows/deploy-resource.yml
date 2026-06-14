@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - object-storage
+          - virtual-machine
       cloud:
         description: "Cloud to target"
         required: true
@@ -34,6 +35,7 @@ permissions:
 
 env:
   TF_IN_AUTOMATION: "true"
+  TF_VAR_ssh_public_key_b64: ${{ vars.SSH_PUBLIC_KEY }}
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -95,7 +97,7 @@ jobs:
     if: inputs.cloud == 'azure' || inputs.cloud == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
+    environment: default
     env:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 

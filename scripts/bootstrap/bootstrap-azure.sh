@@ -6,9 +6,10 @@
 #   1. Creates the Resource Group and Storage Account for Terraform state
 #   2. Creates the Blob Container for state files
 #   3. Creates an App Registration and Service Principal for GitHub Actions
-#   4. Adds Federated Credentials for main branch (apply) and pull requests (plan)
-#   5. Creates the examples Resource Group
-#   6. Applies RBAC assignments from scripts/iam/azure-permissions.json
+#   4. Creates a 'default' GitHub Actions environment
+#   5. Adds a Federated Credential for the 'default' environment (covers all branches)
+#   6. Creates the examples Resource Group
+#   7. Applies RBAC assignments from scripts/iam/azure-permissions.json
 #
 # Usage:
 #   ./scripts/bootstrap-azure.sh
@@ -45,7 +46,7 @@ az account set --subscription "${AZ_SUBSCRIPTION}"
 # ---------- Resource Provider Registration ----------
 
 echo "==> [Azure] Ensuring required resource providers are registered"
-for PROVIDER in Microsoft.Storage Microsoft.Authorization; do
+for PROVIDER in Microsoft.Storage Microsoft.Authorization Microsoft.Network Microsoft.Compute; do
   STATE=$(az provider show --namespace "${PROVIDER}" --query 'registrationState' --output tsv 2>/dev/null)
   if [ "${STATE}" = "Registered" ]; then
     echo "[SKIP] ${PROVIDER} already registered."
@@ -147,6 +148,19 @@ else
   az ad sp create --id "${APP_ID}" --output none
 fi
 
+# ---------- GitHub Environment ----------
+
+echo ""
+echo "==> [GitHub] Setting up 'default' environment"
+
+if gh api "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/default" --silent 2>/dev/null; then
+  echo "[SKIP] GitHub environment 'default' already exists."
+else
+  echo "[CREATE] Creating GitHub environment 'default'..."
+  gh api --method PUT "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/default" --silent
+  echo "[OK] Created."
+fi
+
 # ---------- Federated Credentials ----------
 
 echo ""
@@ -177,23 +191,20 @@ add_federated_credential() {
   fi
 }
 
-# Apply + workflow_dispatch — trusted on push/dispatch from main (same sub claim)
+# GitHub Actions environment — covers all branches and pull requests that run
+# jobs with 'environment: default'. Azure does not support wildcard subjects
+# that span multiple colon-separated segments, so an environment credential is
+# the cleanest way to trust any branch without per-branch credentials.
 add_federated_credential \
-  "github-main" \
-  "repo:${GITHUB_ORG}/${GITHUB_REPO}:ref:refs/heads/main" \
-  "GitHub Actions — push to main and workflow_dispatch from main"
-
-# Plan — trusted on pull requests
-add_federated_credential \
-  "github-pr" \
-  "repo:${GITHUB_ORG}/${GITHUB_REPO}:pull_request" \
-  "GitHub Actions plan — pull requests"
+  "GHA-Default-Creds" \
+  "repo:${GITHUB_ORG}/${GITHUB_REPO}:environment:default" \
+  "GitHub Actions — default environment (all branches)"
 
 # ---------- RBAC assignments (service principal) ----------
 
 echo ""
 echo "==> [Azure] Applying RBAC assignments for service principal"
-"${SCRIPT_DIR}/apply-azure-rbac.sh" "${APP_ID}" "${SCRIPT_DIR}/iam/azure-permissions.json"
+"${SCRIPT_DIR}/apply-azure-rbac.sh" "${APP_ID}" "${SCRIPT_DIR}/../iam/azure-permissions.json"
 
 # ---------- RBAC assignments (current user) ----------
 

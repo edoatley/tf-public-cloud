@@ -1,8 +1,28 @@
 # Object Storage
 
+- [Object Storage](#object-storage)
+  - [Introduction](#introduction)
+    - [What each example provisions](#what-each-example-provisions)
+  - [AWS - S3 Bucket](#aws---s3-bucket)
+  - [GCP - Cloud Storage Bucket](#gcp---cloud-storage-bucket)
+  - [Azure - Blob Container (within Storage Account)](#azure---blob-container-within-storage-account)
+  - [Deploying](#deploying)
+    - [Via GitHub Actions (recommended)](#via-github-actions-recommended)
+    - [Locally](#locally)
+      - [AWS](#aws)
+      - [GCP](#gcp)
+      - [Azure](#azure)
+  - [Working with objects](#working-with-objects)
+    - [AWS (objects)](#aws-objects)
+    - [GCP (objects)](#gcp-objects)
+    - [Azure (objects)](#azure-objects)
+    - [Summary of operations](#summary-of-operations)
+
+## Introduction
+
 Comparison of the object-storage example across all three clouds.
 
-## What each example provisions
+### What each example provisions
 
 |                             | AWS                                    | GCP                                   | Azure                                                |
 | --------------------------- | -------------------------------------- | ------------------------------------- | ---------------------------------------------------- |
@@ -15,7 +35,7 @@ Comparison of the object-storage example across all three clouds.
 | **Soft delete / retention** | —                                      | —                                     | 7-day blob + container delete retention              |
 | **Tagging / labelling**     | `default_tags` on provider             | `labels` on resource                  | `tags` on resource group + account                   |
 
-## AWS
+## AWS - S3 Bucket
 
 S3 bucket with versioning, server-side encryption, and a bucket policy that denies any non-HTTPS request.
 
@@ -36,7 +56,7 @@ S3 bucket with versioning, server-side encryption, and a bucket policy that deni
 - `bucket_key_enabled` is set when using KMS to reduce API call costs
 - HTTPS enforcement is a deny statement on `aws:SecureTransport = false`, not a managed policy
 
-## GCP
+## GCP - Cloud Storage Bucket
 
 GCS bucket with uniform bucket-level access, public access prevention enforced, versioning, and optional CMEK.
 
@@ -58,7 +78,7 @@ GCS bucket with uniform bucket-level access, public access prevention enforced, 
 - `force_destroy = false` protects against accidental deletion of non-empty buckets
 - CMEK is applied via a `dynamic` block — no encryption block is emitted when `kms_key_name` is null
 
-## Azure
+## Azure - Blob Container (within Storage Account)
 
 Storage Account with a private Blob Container. The example also creates the resource group that owns both resources.
 
@@ -77,43 +97,82 @@ Storage Account with a private Blob Container. The example also creates the reso
 
 **Key design decisions:**
 
-- `skip_provider_registration = true` on the provider avoids needing subscription-level write access in CI
+- `resource_provider_registrations = "none"` on the provider avoids needing subscription-level write access in CI
 - `use_oidc = true` aligns with the OIDC-based GitHub Actions authentication
 - Soft-delete retention (7 days) is set for both blobs and containers as a safety net
 - The container uses `container_access_type = "private"` — no anonymous access
 
 ## Deploying
 
+### Via GitHub Actions (recommended)
+
+Use the `Deploy Resource` workflow dispatch — no local credentials needed:
+
 ```sh
-cd <cloud>/object-storage
+# Plan only (default)
+gh workflow run deploy-resource.yml \
+  --field resource_type=object-storage \
+  --field cloud=all \
+  --field action=plan
 
-# AWS
-terraform init
-terraform apply -var="bucket_name=my-unique-bucket"
+# Apply
+gh workflow run deploy-resource.yml \
+  --field resource_type=object-storage \
+  --field cloud=all \
+  --field action=apply
 
-# GCP
-terraform init
-terraform apply -var="project=my-gcp-project" -var="bucket_name=my-unique-bucket"
+# Destroy
+gh workflow run deploy-resource.yml \
+  --field resource_type=object-storage \
+  --field cloud=all \
+  --field action=destroy
 
-# Azure (subscription_id can also be set via TF_VAR_subscription_id env var)
-terraform init
-terraform apply \
-  -var="subscription_id=<your-subscription-id>" \
-  -var="resource_group_name=rg-my-example" \
-  -var="storage_account_name=mystorageacct"
+# Watch the run
+gh run watch
 ```
 
-For repeated local use, create a gitignored `terraform.tfvars` in the module directory rather than passing `-var` flags each time.
+You can also target a single cloud by passing `--field cloud=aws` (or `gcp` / `azure`).
+
+### Locally
+
+All variables have defaults so minimal flags are needed. Run from the repo root.
+
+#### AWS
+
+```sh
+terraform -chdir=aws/object-storage init
+terraform -chdir=aws/object-storage apply
+```
+
+#### GCP
+
+```sh
+terraform -chdir=gcp/object-storage init
+terraform -chdir=gcp/object-storage apply -var="project=<your-gcp-project-id>"
+```
+
+#### Azure
+
+`subscription_id` must be supplied — either as a variable or via the environment:
+
+```sh
+export TF_VAR_subscription_id=<your-subscription-id>
+export ARM_SUBSCRIPTION_ID=<your-subscription-id>
+terraform -chdir=azure/object-storage init
+terraform -chdir=azure/object-storage apply
+```
+
+For repeated local use, create a gitignored `terraform.tfvars` in the module directory rather than setting env vars each time.
 
 ## Working with objects
 
-After deploying, use the helper scripts in `scripts/` to upload, update, read back, and delete a file. Each script takes the resource name(s) from `terraform output`.
+After deploying, use the helper scripts in `scripts/examples/` to upload, update, read back, and delete a file. Each script takes the resource name(s) from `terraform output`.
 
 ### AWS (objects)
 
 ```sh
 BUCKET=$(terraform -chdir=aws/object-storage output -raw bucket_name)
-./scripts/object-storage-aws.sh "$BUCKET"
+./scripts/examples/object-storage-aws.sh "$BUCKET"
 ```
 
 <details>
@@ -139,7 +198,7 @@ delete: s3://tf-public-cloud-object-storage-32f9/demo/hello.txt
 
 ```sh
 BUCKET=$(terraform -chdir=gcp/object-storage output -raw bucket_name)
-./scripts/object-storage-gcp.sh "$BUCKET"
+./scripts/examples/object-storage-gcp.sh "$BUCKET"
 ```
 
 <details>
@@ -171,7 +230,7 @@ Removing objects:
 ```sh
 ACCOUNT=$(terraform -chdir=azure/object-storage output -raw storage_account_name)
 CONTAINER=$(terraform -chdir=azure/object-storage output -raw container_name)
-./scripts/object-storage-azure.sh "$ACCOUNT" "$CONTAINER"
+./scripts/examples/object-storage-azure.sh "$ACCOUNT" "$CONTAINER"
 ```
 
 . [!Note]
@@ -185,9 +244,8 @@ CONTAINER=$(terraform -chdir=azure/object-storage output -raw container_name)
 >    --scope $(az storage account show --name my-sa --resource-group my-rg --query id -o tsv)
 > ```
 
-
 <details>
-<summary>Example GCP Output</summary>
+<summary>Example Azure Output</summary>
 
 ```terminaloutput
 ==> Upload
