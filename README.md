@@ -40,15 +40,14 @@ gh run watch
 
 | Workflow | File | Description |
 | -------- | ---- | ----------- |
-| Terraform CI/CD | `terraform.yml` | Validates, plans, and applies a single module. Triggered automatically on PRs and pushes to `main`; use `workflow_dispatch` with a `folder` input to target a specific module manually. |
-| Deploy Resource | `deploy-resource.yml` | Deploys a named resource type (e.g. `object-storage`) to one or all clouds via `workflow_dispatch`. |
-| Smoke Test | `smoke-test.yml` | Runs a lightweight `terraform plan` against live state backends to verify provider auth and remote state access for a given cloud. |
-| Test Cloud Authentication | `test-cloud-auth.yml` | Validates OIDC authentication for one or all clouds without touching any resources. |
+| Terraform CI | `terraform.yml` | Validates all changed modules in parallel on PRs and pushes to `main` (`init`, `fmt`, `validate`, `tflint`). Also runs a Trivy IaC + secrets scan. Use `workflow_dispatch` with a `folder` input to target a specific module manually. |
+| Deploy Resource | `deploy-resource.yml` | Plans, applies, or destroys a named resource type (e.g. `object-storage`, `virtual-machine`, `smoke-test`) against one or all clouds via `workflow_dispatch`. Use `resource_type=smoke-test action=plan` to verify OIDC auth and remote state connectivity. |
 
 All workflows authenticate via OIDC — no long-lived credentials. See `docs/BOOTSTRAP.md` for the required GitHub Actions Variables.
 
 ## Examples
 
-| Example        | AWS                                       | GCP                                       | Azure                                         | Docs                                             |
-| -------------- | ----------------------------------------- | ----------------------------------------- | --------------------------------------------- | ------------------------------------------------ |
-| object-storage | [aws/object-storage](aws/object-storage/) | [gcp/object-storage](gcp/object-storage/) | [azure/object-storage](azure/object-storage/) | [docs/object-storage.md](docs/object-storage.md) |
+| Example         | AWS                                         | GCP                                         | Azure                                           | Docs                                               |
+| --------------- | ------------------------------------------- | ------------------------------------------- | ----------------------------------------------- | -------------------------------------------------- |
+| object-storage  | [aws/object-storage](aws/object-storage/)   | [gcp/object-storage](gcp/object-storage/)   | [azure/object-storage](azure/object-storage/)   | [docs/object-storage.md](docs/object-storage.md)  |
+| virtual-machine | [aws/virtual-machine](aws/virtual-machine/) | [gcp/virtual-machine](gcp/virtual-machine/) | [azure/virtual-machine](azure/virtual-machine/) | [docs/virtual-machines.md](docs/virtual-machines.md) |

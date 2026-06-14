@@ -1,4 +1,4 @@
-name: Terraform CI/CD
+name: Terraform CI
 
 on:
   workflow_dispatch:
@@ -29,97 +29,64 @@ permissions:
 env:
   TF_IN_AUTOMATION: "true"
   TF_CLI_ARGS_plan: "-input=false"
-  TF_CLI_ARGS_apply: "-input=false"
   TF_VAR_ssh_public_key_b64: ${{ vars.SSH_PUBLIC_KEY }}
 
 jobs:
   # ---------------------------------------------------------------------------
-  # detect: resolve which cloud and module path to operate on
+  # detect: resolve which modules changed and build a matrix
   # ---------------------------------------------------------------------------
   detect:
-    name: Detect cloud and module
+    name: Detect changed modules
     runs-on: ubuntu-latest
     outputs:
-      cloud: ${{ steps.detect.outputs.cloud }}
-      module_path: ${{ steps.detect.outputs.module_path }}
-      skip: ${{ steps.detect.outputs.skip }}
+      matrix: ${{ steps.build.outputs.matrix }}
+      skip: ${{ steps.build.outputs.skip }}
 
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Detect cloud and module path
-        id: detect
+      - name: Find changed Terraform files
+        id: changed
+        if: github.event_name != 'workflow_dispatch'
+        uses: tj-actions/changed-files@v47
+        with:
+          dir_names: true
+          dir_names_max_depth: 2
+          files: |
+            aws/**/*.tf
+            gcp/**/*.tf
+            azure/**/*.tf
+          matrix: true
+
+      - name: Build module matrix
+        id: build
         shell: bash
         run: |
-          set -euo pipefail
-
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            MODULE_PATH="${{ inputs.folder }}"
+            FOLDER="${{ inputs.folder }}"
+            CLOUD=$(echo "$FOLDER" | cut -d'/' -f1)
+            MATRIX="[{\"module_path\":\"$FOLDER\",\"cloud\":\"$CLOUD\"}]"
+            echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
           else
-            # Find the deepest common Terraform module root among changed files.
-            # A module root is the closest ancestor directory containing a .tf file.
-            BASE_REF="${{ github.event.pull_request.base.sha || github.event.before }}"
-            if [ -z "${BASE_REF}" ] || [ "${BASE_REF}" = "0000000000000000000000000000000000000000" ]; then
-              CHANGED=$(git diff --name-only HEAD~1 HEAD || true)
-            else
-              CHANGED=$(git diff --name-only "${BASE_REF}" HEAD || true)
-            fi
-
-            MODULE_PATH=""
-            for FILE in $CHANGED; do
-              DIR=$(dirname "$FILE")
-              # Walk up until we find a directory with .tf files or hit the repo root
-              while [ "$DIR" != "." ] && [ "$DIR" != "/" ]; do
-                if ls "${DIR}"/*.tf 2>/dev/null | grep -q .; then
-                  if [ -z "${MODULE_PATH}" ]; then
-                    MODULE_PATH="$DIR"
-                  elif [ "${MODULE_PATH}" != "$DIR" ]; then
-                    if [ "${{ github.event_name }}" = "pull_request" ]; then
-                      echo "::error::Changes span multiple Terraform modules: ${MODULE_PATH} and ${DIR}."
-                      echo "::error::Use workflow_dispatch with an explicit folder input to target one module."
-                      exit 1
-                    else
-                      echo "::warning::Changes span multiple Terraform modules — skipping automated run. Use workflow_dispatch to target a specific module."
-                      echo "skip=true" >> "$GITHUB_OUTPUT"
-                      exit 0
-                    fi
-                  fi
-                  break
-                fi
-                DIR=$(dirname "$DIR")
-              done
-            done
-          fi
-
-          if [ -z "${MODULE_PATH}" ]; then
-            if [ "${{ github.event_name }}" = "pull_request" ]; then
-              echo "::error::Could not determine a target Terraform module. Use workflow_dispatch with an explicit folder."
-              exit 1
-            else
-              echo "::warning::No Terraform module found in changed files — skipping automated run."
+            DIRS='${{ steps.changed.outputs.all_changed_files }}'
+            if [ "$DIRS" = "[]" ] || [ -z "$DIRS" ]; then
+              echo "matrix=[]" >> "$GITHUB_OUTPUT"
               echo "skip=true" >> "$GITHUB_OUTPUT"
-              exit 0
+            else
+              MATRIX=$(echo "$DIRS" | jq -c '[.[] | {module_path: ., cloud: (split("/")[0])}]')
+              echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+              echo "skip=false" >> "$GITHUB_OUTPUT"
             fi
           fi
-
-          # Derive cloud from the top-level directory prefix
-          CLOUD=$(echo "${MODULE_PATH}" | cut -d'/' -f1)
-          if [[ ! "${CLOUD}" =~ ^(aws|gcp|azure)$ ]]; then
-            echo "::error::Unknown cloud prefix '${CLOUD}' — expected aws, gcp, or azure."
-            exit 1
-          fi
-
-          echo "cloud=${CLOUD}" >> "$GITHUB_OUTPUT"
-          echo "module_path=${MODULE_PATH}" >> "$GITHUB_OUTPUT"
-          echo "Detected cloud=${CLOUD}, module_path=${MODULE_PATH}"
 
   # ---------------------------------------------------------------------------
-  # validate: init, fmt check, validate, tflint
+  # validate: init, fmt check, validate, tflint — one job per changed module
   # ---------------------------------------------------------------------------
   validate:
-    name: Validate (${{ needs.detect.outputs.module_path }})
+    name: Validate (${{ matrix.module_path }})
     runs-on: ubuntu-latest
     needs: detect
     if: needs.detect.outputs.skip != 'true'
@@ -127,13 +94,18 @@ jobs:
     env:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.detect.outputs.matrix) }}
+
     steps:
       - uses: actions/checkout@v6
 
       - name: Setup Terraform and authenticate
         uses: ./.github/actions/terraform-setup
         with:
-          cloud: ${{ needs.detect.outputs.cloud }}
+          cloud: ${{ matrix.cloud }}
           aws_role_arn: ${{ vars.AWS_PLAN_ROLE_ARN }}
           aws_region: ${{ vars.AWS_REGION }}
           gcp_wif_provider: ${{ vars.GCP_WIF_PROVIDER }}
@@ -144,157 +116,88 @@ jobs:
 
       - name: terraform init
         run: terraform init -input=false
-        working-directory: ${{ needs.detect.outputs.module_path }}
+        working-directory: ${{ matrix.module_path }}
 
       - name: terraform fmt check
         run: terraform fmt -check -recursive
-        working-directory: ${{ needs.detect.outputs.module_path }}
+        working-directory: ${{ matrix.module_path }}
 
       - name: terraform validate
         run: terraform validate
-        working-directory: ${{ needs.detect.outputs.module_path }}
+        working-directory: ${{ matrix.module_path }}
 
       - name: Set up tflint
-        uses: terraform-linters/setup-tflint@v4
+        uses: terraform-linters/setup-tflint@v6
         with:
           tflint_version: v0.63.1
 
       - name: tflint
         run: |
-          tflint --init --chdir "${{ needs.detect.outputs.module_path }}"
-          tflint --chdir "${{ needs.detect.outputs.module_path }}"
+          tflint --init --chdir "${{ matrix.module_path }}"
+          tflint --chdir "${{ matrix.module_path }}"
 
   # ---------------------------------------------------------------------------
-  # plan: terraform plan, upload artifact, post PR comment
+  # trivy: IaC misconfiguration + secrets scan across the whole repo
+  # Runs independently of detect/validate so it fires on workflow-only PRs too.
   # ---------------------------------------------------------------------------
-  plan:
-    name: Plan (${{ needs.detect.outputs.module_path }})
+  trivy:
+    name: Trivy scan
     runs-on: ubuntu-latest
-    needs: [detect, validate]
-    if: needs.detect.outputs.skip != 'true'
-    environment: default
-    env:
-      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Setup Terraform and authenticate
-        uses: ./.github/actions/terraform-setup
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
-          cloud: ${{ needs.detect.outputs.cloud }}
-          aws_role_arn: ${{ vars.AWS_PLAN_ROLE_ARN }}
-          aws_region: ${{ vars.AWS_REGION }}
-          gcp_wif_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          gcp_service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-          azure_client_id: ${{ vars.AZURE_CLIENT_ID }}
-          azure_tenant_id: ${{ vars.AZURE_TENANT_ID }}
-          azure_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+          scan-type: fs
+          scanners: config,secret
+          exit-code: 0
+          severity: HIGH,CRITICAL
+          format: table
+          output: trivy-results.txt
 
-      - name: terraform init
-        run: terraform init -input=false
-        working-directory: ${{ needs.detect.outputs.module_path }}
-
-      - name: terraform plan
-        id: plan
-        run: |
-          terraform plan -out=tfplan.binary -no-color 2>&1 | tee plan.txt
-          terraform show -no-color tfplan.binary > plan-readable.txt
-        working-directory: ${{ needs.detect.outputs.module_path }}
-
-      - name: Upload plan artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: tfplan-${{ needs.detect.outputs.cloud }}-${{ github.run_id }}
-          path: |
-            ${{ needs.detect.outputs.module_path }}/tfplan.binary
-            ${{ needs.detect.outputs.module_path }}/plan-readable.txt
-          retention-days: 5
-
-      - name: Post plan comment on PR
-        if: github.event_name == 'pull_request'
+      - name: Summarise Trivy results
+        if: always()
         uses: actions/github-script@v9
         with:
           script: |
             const fs = require('fs');
-            const maxLen = 65000;
-            let plan = fs.readFileSync('${{ needs.detect.outputs.module_path }}/plan-readable.txt', 'utf8');
-            const truncated = plan.length > maxLen;
-            if (truncated) {
-              plan = plan.substring(0, maxLen) + '\n\n... output truncated. Download the full plan from Actions artifacts.';
-            }
-            const marker = '<!-- tf-plan-${{ needs.detect.outputs.module_path }} -->';
-            const body = `${marker}\n**Terraform plan: \`${{ needs.detect.outputs.module_path }}\`**\n\n<details><summary>Show plan</summary>\n\n\`\`\`hcl\n${plan}\n\`\`\`\n\n</details>`;
+            const raw = fs.existsSync('trivy-results.txt')
+              ? fs.readFileSync('trivy-results.txt', 'utf8').trim()
+              : '';
 
-            // Delete previous plan comments for this module to avoid spam
+            // Count findings by severity
+            const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+            for (const [sev] of raw.matchAll(/\b(CRITICAL|HIGH|MEDIUM|LOW)\b/g)) counts[sev]++;
+            const total = Object.values(counts).reduce((a, b) => a + b, 0);
+            const badge = total === 0 ? '✅ No findings' :
+              `⚠️ ${total} finding(s): CRITICAL=${counts.CRITICAL} HIGH=${counts.HIGH} MEDIUM=${counts.MEDIUM} LOW=${counts.LOW}`;
+
+            // Write full results to job summary
+            await core.summary
+              .addHeading('Trivy scan')
+              .addRaw(badge + '\n\n')
+              .addCodeBlock(raw || 'No findings.', 'text')
+              .write();
+
+            // Post a short count comment on PRs
+            if (context.eventName !== 'pull_request') return;
+            const marker = '<!-- trivy-scan -->';
+            const body = `${marker}\n**Trivy scan:** ${badge}\n\nFull results in the [job summary](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}).`;
             const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: context.repo.owner, repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            for (const comment of comments) {
-              if (comment.body && comment.body.includes(marker)) {
+            for (const c of comments) {
+              if (c.body?.includes(marker)) {
                 await github.rest.issues.deleteComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: comment.id,
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  comment_id: c.id,
                 });
               }
             }
-
             await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body,
+              owner: context.repo.owner, repo: context.repo.repo,
+              issue_number: context.issue.number, body,
             });
-
-  # ---------------------------------------------------------------------------
-  # apply: download plan artifact and apply (main branch only)
-  # ---------------------------------------------------------------------------
-  apply:
-    name: Apply (${{ needs.detect.outputs.module_path }})
-    runs-on: ubuntu-latest
-    needs: [detect, plan]
-    if: needs.detect.outputs.skip != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/main'
-    environment: default
-    env:
-      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Setup Terraform and authenticate
-        uses: ./.github/actions/terraform-setup
-        with:
-          cloud: ${{ needs.detect.outputs.cloud }}
-          aws_role_arn: ${{ vars.AWS_ROLE_ARN }}
-          aws_region: ${{ vars.AWS_REGION }}
-          gcp_wif_provider: ${{ vars.GCP_WIF_PROVIDER }}
-          gcp_service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
-          azure_client_id: ${{ vars.AZURE_CLIENT_ID }}
-          azure_tenant_id: ${{ vars.AZURE_TENANT_ID }}
-          azure_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: terraform init
-        run: terraform init -input=false
-        working-directory: ${{ needs.detect.outputs.module_path }}
-
-      - name: Download plan artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: tfplan-${{ needs.detect.outputs.cloud }}-${{ github.run_id }}
-          path: ${{ needs.detect.outputs.module_path }}
-
-      - name: terraform apply
-        run: terraform apply -auto-approve tfplan.binary
-        working-directory: ${{ needs.detect.outputs.module_path }}
-
-      - name: Write apply summary
-        run: |
-          echo "## Terraform apply: \`${{ needs.detect.outputs.module_path }}\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Applied successfully on commit \`${{ github.sha }}\`." >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          terraform output -no-color 2>/dev/null >> "$GITHUB_STEP_SUMMARY" || true
-        working-directory: ${{ needs.detect.outputs.module_path }}

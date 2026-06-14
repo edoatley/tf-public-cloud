@@ -23,7 +23,7 @@ terraform {
 
 provider "azurerm" {
   features {}
-  subscription_id            = var.subscription_id
-  use_oidc                   = true
+  subscription_id                 = var.subscription_id
+  use_oidc                        = true
   resource_provider_registrations = "none"
 }
