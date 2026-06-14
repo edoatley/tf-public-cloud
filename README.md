@@ -41,13 +41,16 @@ gh run watch
 | Workflow | File | Description |
 | -------- | ---- | ----------- |
 | Terraform CI | `terraform.yml` | Validates all changed modules in parallel on PRs and pushes to `main` (`init`, `fmt`, `validate`, `tflint`). Also runs a Trivy IaC + secrets scan. Use `workflow_dispatch` with a `folder` input to target a specific module manually. |
-| Deploy Resource | `deploy-resource.yml` | Plans, applies, or destroys a named resource type (e.g. `object-storage`, `virtual-machine`, `smoke-test`) against one or all clouds via `workflow_dispatch`. Use `resource_type=smoke-test action=plan` to verify OIDC auth and remote state connectivity. |
+| Deploy Resource | `deploy-resource.yml` | Plans, applies, or destroys a named resource type (e.g. `object-storage`, `virtual-machine`, `container-registry`, `containerised-app`) against one or all clouds via `workflow_dispatch`. Use `resource_type=smoke-test action=plan` to verify OIDC auth and remote state connectivity. |
+| Build and Push | `build-and-push.yml` | Builds the Spring Boot container image and pushes it to each cloud's container registry. Run this after applying `container-registry` and before applying `containerised-app`. |
 
 All workflows authenticate via OIDC — no long-lived credentials. See `docs/BOOTSTRAP.md` for the required GitHub Actions Variables.
 
 ## Examples
 
-| Example         | AWS                                         | GCP                                         | Azure                                           | Docs                                               |
-| --------------- | ------------------------------------------- | ------------------------------------------- | ----------------------------------------------- | -------------------------------------------------- |
-| object-storage  | [aws/object-storage](aws/object-storage/)   | [gcp/object-storage](gcp/object-storage/)   | [azure/object-storage](azure/object-storage/)   | [docs/object-storage.md](docs/object-storage.md)  |
-| virtual-machine | [aws/virtual-machine](aws/virtual-machine/) | [gcp/virtual-machine](gcp/virtual-machine/) | [azure/virtual-machine](azure/virtual-machine/) | [docs/virtual-machines.md](docs/virtual-machines.md) |
+| Example              | AWS                                                   | GCP                                                   | Azure                                                     | Docs                                                               |
+| -------------------- | ----------------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------ |
+| object-storage       | [aws/object-storage](aws/object-storage/)             | [gcp/object-storage](gcp/object-storage/)             | [azure/object-storage](azure/object-storage/)             | [docs/object-storage.md](docs/object-storage.md)                  |
+| virtual-machine      | [aws/virtual-machine](aws/virtual-machine/)           | [gcp/virtual-machine](gcp/virtual-machine/)           | [azure/virtual-machine](azure/virtual-machine/)           | [docs/virtual-machines.md](docs/virtual-machines.md)              |
+| container-registry   | [aws/container-registry](aws/container-registry/)     | [gcp/container-registry](gcp/container-registry/)     | [azure/container-registry](azure/container-registry/)     | [docs/containerised-app.md](docs/containerised-app.md)            |
+| containerised-app    | [aws/containerised-app](aws/containerised-app/)       | [gcp/containerised-app](gcp/containerised-app/)       | [azure/containerised-app](azure/containerised-app/)       | [docs/containerised-app.md](docs/containerised-app.md)            |

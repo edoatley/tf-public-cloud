@@ -22,5 +22,23 @@
     "scope": "project",
     "resource": "gcp-sandbox-2026-18798",
     "comment": "Create/manage Compute Engine resources for the virtual-machine example"
+  },
+  {
+    "role": "roles/artifactregistry.admin",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage Artifact Registry repositories and set IAM bindings for the container-registry example"
+  },
+  {
+    "role": "roles/run.admin",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage Cloud Run services for the containerised-app example"
+  },
+  {
+    "role": "roles/iam.serviceAccountUser",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Required by Cloud Run to bind the service account at deploy time"
   }
 ]

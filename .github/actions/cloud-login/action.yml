@@ -44,11 +44,19 @@ runs:
         workload_identity_provider: ${{ inputs.gcp_wif_provider }}
         service_account: ${{ inputs.gcp_service_account }}
 
-    - name: Authenticate to Azure
+    - name: Authenticate to Azure (CLI)
+      if: inputs.cloud == 'azure'
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.azure_client_id }}
+        tenant-id: ${{ inputs.azure_tenant_id }}
+        subscription-id: ${{ inputs.azure_subscription_id }}
+
+    - name: Authenticate to Azure (Terraform)
       if: inputs.cloud == 'azure'
       shell: bash
       run: |
-        echo "ARM_CLIENT_ID=${{ inputs.azure_client_id }}"       >> "$GITHUB_ENV"
-        echo "ARM_TENANT_ID=${{ inputs.azure_tenant_id }}"       >> "$GITHUB_ENV"
+        echo "ARM_CLIENT_ID=${{ inputs.azure_client_id }}"            >> "$GITHUB_ENV"
+        echo "ARM_TENANT_ID=${{ inputs.azure_tenant_id }}"            >> "$GITHUB_ENV"
         echo "ARM_SUBSCRIPTION_ID=${{ inputs.azure_subscription_id }}" >> "$GITHUB_ENV"
-        echo "ARM_USE_OIDC=true"                                  >> "$GITHUB_ENV"
+        echo "ARM_USE_OIDC=true"                                       >> "$GITHUB_ENV"
