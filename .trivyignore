@@ -1,0 +1,14 @@
+# These findings are intentional in this demo repo — VMs need public internet access for SSH.
+
+# AWS: subnet assigns public IPs (needed for demo VM reachability)
+AWS-0164
+
+# AWS: security group allows unrestricted SSH ingress (demo VM must be reachable)
+AWS-0107
+
+# Azure: NSG allows unrestricted ingress / SSH from any IP (demo VM must be reachable)
+AZU-0047
+AZU-0050
+
+# GCP: instance has a public IP (needed for demo VM reachability)
+GCP-0031

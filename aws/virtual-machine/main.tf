@@ -70,13 +70,6 @@ resource "aws_security_group" "this" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 }
 
 resource "aws_instance" "this" {
@@ -86,9 +79,14 @@ resource "aws_instance" "this" {
   vpc_security_group_ids = [aws_security_group.this.id]
   key_name               = aws_key_pair.this.key_name
 
+  metadata_options {
+    http_tokens = "required"
+  }
+
   root_block_device {
     volume_type           = "gp3"
     volume_size           = 8
     delete_on_termination = true
+    encrypted             = true
   }
 }
