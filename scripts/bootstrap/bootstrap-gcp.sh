@@ -49,6 +49,7 @@ gcloud services enable \
   cloudresourcemanager.googleapis.com \
   storage.googleapis.com \
   iam.googleapis.com \
+  compute.googleapis.com \
   --project="${GCP_PROJECT}"
 echo "[OK] APIs enabled."
 

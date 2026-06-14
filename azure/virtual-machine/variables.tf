@@ -12,7 +12,7 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure region for all resources."
   type        = string
-  default     = "uksouth"
+  default     = "westeurope"
 }
 
 variable "name_prefix" {
@@ -24,7 +24,7 @@ variable "name_prefix" {
 variable "vm_size" {
   description = "Azure VM size."
   type        = string
-  default     = "Standard_B1s"
+  default     = "Standard_D2s_v3"
 }
 
 variable "admin_username" {
