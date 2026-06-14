@@ -10,8 +10,7 @@ Complete the relevant cloud section(s) once before running `terraform init` in a
 - [GCP Bootstrap](#gcp-bootstrap)
 - [Azure Bootstrap](#azure-bootstrap)
 - [Post-Bootstrap: Update backend.tf files](#post-bootstrap-update-backendtf-files)
-- [Verify OIDC authentication](#verify-oidc-authentication)
-- [Smoke-test Terraform connectivity](#smoke-test-terraform-connectivity)
+- [Verify OIDC authentication and Terraform connectivity](#verify-oidc-authentication-and-terraform-connectivity)
 - [Managing permissions](#managing-permissions)
 
 ## Prerequisites
@@ -175,9 +174,9 @@ Use the values printed at the end of `bootstrap-azure.sh`.
 
 ## Post-Bootstrap: Update backend.tf files
 
-After running each bootstrap script, fill in the real values it prints into the corresponding `backend.tf`.
+After running each bootstrap script, fill in the real values it prints into the corresponding `backend.tf` for each module. The key/prefix must be unique per module — examples below use `aws/object-storage` but the same pattern applies to every module under that cloud.
 
-### AWS — `aws/object-storage/backend.tf`
+### AWS — e.g. `aws/object-storage/terraform.tf`
 
 ```hcl
 terraform {
@@ -191,7 +190,7 @@ terraform {
 }
 ```
 
-### GCP — `gcp/object-storage/backend.tf`
+### GCP — e.g. `gcp/object-storage/terraform.tf`
 
 ```hcl
 terraform {
@@ -202,7 +201,7 @@ terraform {
 }
 ```
 
-### Azure — `azure/object-storage/backend.tf`
+### Azure — e.g. `azure/object-storage/terraform.tf`
 
 ```hcl
 terraform {
@@ -216,50 +215,35 @@ terraform {
 }
 ```
 
-## Verify OIDC authentication
+## Verify OIDC authentication and Terraform connectivity
 
-Before running Terraform, verify that GitHub Actions can authenticate to each cloud using the
-`test-cloud-auth` workflow. This performs a lightweight OIDC token exchange and prints the
-resolved identity — it does not create or modify any infrastructure.
-
-```sh
-# Test a single cloud
-gh workflow run test-cloud-auth.yml --field cloud=aws
-gh workflow run test-cloud-auth.yml --field cloud=gcp
-gh workflow run test-cloud-auth.yml --field cloud=azure
-
-# Test all three at once
-gh workflow run test-cloud-auth.yml --field cloud=all
-
-# Watch the latest run
-gh run list --workflow=test-cloud-auth.yml --limit=1
-gh run watch
-```
-
-Each job prints the resolved identity to the job summary so you can confirm which account was assumed.
-Once all three clouds pass, the `test-cloud-auth.yml` workflow can be deleted.
-
-## Smoke-test Terraform connectivity
-
-Once OIDC authentication is verified, run the smoke test to confirm that Terraform can reach the
-remote state backend and resolve live data sources for the target cloud. The smoke test modules
-live in `{cloud}/smoke-test/` and contain only `data` sources — no resources are created.
+Once bootstrapped, run the smoke test via `deploy-resource.yml` to confirm that GitHub Actions can
+authenticate to each cloud via OIDC and that Terraform can reach the remote state backend and
+resolve live data sources. The smoke-test modules live in `{cloud}/smoke-test/` and contain only
+`data` sources — no resources are created.
 
 A successful run proves:
 
+- OIDC token exchange works and the correct identity is assumed
 - `terraform init` can authenticate to and read the remote state bucket
 - The cloud provider can resolve real account/project/subscription metadata
 - `terraform plan` completes cleanly end-to-end
 
-Run the smoke test for each cloud you have bootstrapped:
-
 ```sh
-gh workflow run smoke-test.yml --field cloud=aws
-gh workflow run smoke-test.yml --field cloud=gcp
-gh workflow run smoke-test.yml --field cloud=azure
+# Smoke-test a single cloud
+gh workflow run deploy-resource.yml \
+  --field resource_type=smoke-test \
+  --field cloud=aws \
+  --field action=plan
+
+# Smoke-test all three clouds at once
+gh workflow run deploy-resource.yml \
+  --field resource_type=smoke-test \
+  --field cloud=all \
+  --field action=plan
 
 # Watch the latest run
-gh run list --workflow=smoke-test.yml --limit=1
+gh run list --workflow=deploy-resource.yml --limit=1
 gh run watch
 ```
 
