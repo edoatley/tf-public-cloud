@@ -12,8 +12,9 @@ locals {
 }
 
 resource "google_cloud_run_v2_service" "this" {
-  name     = var.service_name
-  location = var.region
+  name                = var.service_name
+  location            = var.region
+  deletion_protection = false
 
   template {
     containers {
