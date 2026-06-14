@@ -197,11 +197,12 @@ resource "aws_ecs_service" "this" {
 # --- Application Load Balancer ---------------------------------------------
 
 resource "aws_lb" "this" {
-  name               = "tf-public-cloud-app-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+  name                       = "tf-public-cloud-app-alb"
+  internal                   = false
+  load_balancer_type         = "application"
+  security_groups            = [aws_security_group.alb.id]
+  subnets                    = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+  drop_invalid_header_fields = true
 }
 
 resource "aws_lb_target_group" "this" {

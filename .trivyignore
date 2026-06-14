@@ -12,3 +12,15 @@ AZU-0050
 
 # GCP: instance has a public IP (needed for demo VM reachability)
 GCP-0031
+
+# These findings are intentional in the containerised-app demo modules.
+
+# AWS: ALB is internet-facing (the demo exposes a public HTTP endpoint)
+AWS-0053
+
+# AWS: ALB listener uses plain HTTP (demo has no TLS certificate; HTTPS would require ACM)
+AWS-0054
+
+# AWS: security group allows unrestricted egress (ECS tasks must reach ECR/internet to pull
+# images; ALB must forward responses back to clients — open egress is standard for both)
+AWS-0104
