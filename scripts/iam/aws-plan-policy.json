@@ -66,7 +66,9 @@
         "ec2:DescribeVpcClassicLinkDnsSupport",
         "ec2:DescribeAvailabilityZones",
         "ec2:DescribeAccountAttributes",
-        "ec2:DescribeTags"
+        "ec2:DescribeTags",
+        "ec2:DescribePrefixLists",
+        "ec2:GetSecurityGroupsForVpc"
       ],
       "Resource": "*"
     },
@@ -94,7 +96,8 @@
         "ecs:ListServices",
         "ecs:ListTaskDefinitions",
         "ecs:ListClusters",
-        "ecs:ListTagsForResource"
+        "ecs:ListTagsForResource",
+        "ecs:DescribeCapacityProviders"
       ],
       "Resource": "*"
     },
@@ -103,6 +106,7 @@
       "Effect": "Allow",
       "Action": [
         "iam:GetRole",
+        "iam:GetRolePolicy",
         "iam:ListAttachedRolePolicies",
         "iam:ListRolePolicies",
         "iam:ListInstanceProfilesForRole"
@@ -118,6 +122,7 @@
         "elasticloadbalancing:DescribeTargetGroups",
         "elasticloadbalancing:DescribeTargetGroupAttributes",
         "elasticloadbalancing:DescribeListeners",
+        "elasticloadbalancing:DescribeListenerAttributes",
         "elasticloadbalancing:DescribeTags",
         "elasticloadbalancing:DescribeTargetHealth"
       ],

@@ -82,6 +82,8 @@
         "ec2:DescribeAvailabilityZones",
         "ec2:DescribeAccountAttributes",
         "ec2:DescribeTags",
+        "ec2:DescribePrefixLists",
+        "ec2:GetSecurityGroupsForVpc",
         "ec2:CreateVpc",
         "ec2:DeleteVpc",
         "ec2:ModifyVpcAttribute",
@@ -175,7 +177,8 @@
         "ecs:ListClusters",
         "ecs:TagResource",
         "ecs:UntagResource",
-        "ecs:ListTagsForResource"
+        "ecs:ListTagsForResource",
+        "ecs:DescribeCapacityProviders"
       ],
       "Resource": "*"
     },
@@ -193,9 +196,21 @@
         "iam:PassRole",
         "iam:TagRole",
         "iam:UntagRole",
-        "iam:ListInstanceProfilesForRole"
+        "iam:ListInstanceProfilesForRole",
+        "iam:GetRolePolicy"
       ],
       "Resource": "arn:aws:iam::*:role/tf-public-cloud-app-*"
+    },
+    {
+      "Sid": "ELBServiceLinkedRole",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::*:role/aws-service-role/elasticloadbalancing.amazonaws.com/AWSServiceRoleForElasticLoadBalancing",
+      "Condition": {
+        "StringLike": {
+          "iam:AWSServiceName": "elasticloadbalancing.amazonaws.com"
+        }
+      }
     },
     {
       "Sid": "ELBManage",
@@ -221,7 +236,8 @@
         "elasticloadbalancing:RemoveTags",
         "elasticloadbalancing:RegisterTargets",
         "elasticloadbalancing:DeregisterTargets",
-        "elasticloadbalancing:DescribeTargetHealth"
+        "elasticloadbalancing:DescribeTargetHealth",
+        "elasticloadbalancing:DescribeListenerAttributes"
       ],
       "Resource": "*"
     },

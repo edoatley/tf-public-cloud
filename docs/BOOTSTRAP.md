@@ -136,7 +136,7 @@ gh variable set GCP_PROJECT_ID      --body "gcp-sandbox-2026-18798"
 
 `scripts/bootstrap/bootstrap-azure.sh` handles everything in one go:
 
-- Registers the `Microsoft.Storage` and `Microsoft.Authorization` resource providers if not already enabled on the subscription
+- Registers the `Microsoft.Storage`, `Microsoft.Authorization`, `Microsoft.Network`, `Microsoft.Compute`, `Microsoft.ContainerRegistry`, and `Microsoft.App` resource providers if not already enabled on the subscription
 - Creates the Resource Group, Storage Account (HTTPS-only, TLS 1.2, versioning enabled), and Blob Container for Terraform state
 - Creates the examples Resource Group
 - Creates an App Registration and Service Principal for GitHub Actions OIDC authentication
