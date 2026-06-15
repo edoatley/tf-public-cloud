@@ -46,7 +46,7 @@ runs:
 
     - name: Authenticate to Azure (CLI)
       if: inputs.cloud == 'azure'
-      uses: azure/login@v2
+      uses: azure/login@v3
       with:
         client-id: ${{ inputs.azure_client_id }}
         tenant-id: ${{ inputs.azure_tenant_id }}
