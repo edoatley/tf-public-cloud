@@ -231,3 +231,21 @@ resource "aws_lb_listener" "http" {
     target_group_arn = aws_lb_target_group.this.arn
   }
 }
+
+resource "aws_cloudwatch_metric_alarm" "target_5xx" {
+  alarm_name          = "tf-public-cloud-app-target-5xx"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "HTTPCode_Target_5XX_Count"
+  namespace           = "AWS/ApplicationELB"
+  period              = 60
+  statistic           = "Sum"
+  threshold           = 0
+  treat_missing_data  = "notBreaching"
+  alarm_description   = "Alert when any 5xx responses are returned by ECS targets"
+
+  dimensions = {
+    LoadBalancer = aws_lb.this.arn_suffix
+    TargetGroup  = aws_lb_target_group.this.arn_suffix
+  }
+}

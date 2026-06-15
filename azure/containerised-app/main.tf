@@ -72,3 +72,28 @@ resource "azurerm_container_app" "this" {
     }
   }
 }
+
+resource "azurerm_monitor_metric_alert" "app_5xx" {
+  name                = "tf-public-cloud-app-5xx-alert"
+  resource_group_name = azurerm_resource_group.this.name
+  scopes              = [azurerm_container_app.this.id]
+  description         = "Alert when any 5xx responses are returned by the Container App"
+  severity            = 2
+  window_size         = "PT5M"
+  frequency           = "PT1M"
+  enabled             = true
+
+  criteria {
+    metric_namespace = "Microsoft.App/containerApps"
+    metric_name      = "Requests"
+    aggregation      = "Count"
+    operator         = "GreaterThan"
+    threshold        = 0
+
+    dimension {
+      name     = "statusCodeCategory"
+      operator = "Include"
+      values   = ["5xx"]
+    }
+  }
+}
