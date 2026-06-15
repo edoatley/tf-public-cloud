@@ -50,6 +50,8 @@ gcloud services enable \
   storage.googleapis.com \
   iam.googleapis.com \
   compute.googleapis.com \
+  cloudfunctions.googleapis.com \
+  cloudbuild.googleapis.com \
   --project="${GCP_PROJECT}"
 echo "[OK] APIs enabled."
 

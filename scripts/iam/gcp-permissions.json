@@ -46,5 +46,11 @@
     "scope": "project",
     "resource": "gcp-sandbox-2026-18798",
     "comment": "Create/manage Cloud Monitoring alert policies for the containerised-app example"
+  },
+  {
+    "role": "roles/cloudfunctions.developer",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage Cloud Functions v2 for the serverless example"
   }
 ]
