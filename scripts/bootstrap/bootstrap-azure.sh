@@ -46,7 +46,7 @@ az account set --subscription "${AZ_SUBSCRIPTION}"
 # ---------- Resource Provider Registration ----------
 
 echo "==> [Azure] Ensuring required resource providers are registered"
-for PROVIDER in Microsoft.Storage Microsoft.Authorization Microsoft.Network Microsoft.Compute Microsoft.ContainerRegistry Microsoft.App; do
+for PROVIDER in Microsoft.Storage Microsoft.Authorization Microsoft.Network Microsoft.Compute Microsoft.ContainerRegistry Microsoft.App Microsoft.Web; do
   STATE=$(az provider show --namespace "${PROVIDER}" --query 'registrationState' --output tsv 2>/dev/null)
   if [ "${STATE}" = "Registered" ]; then
     echo "[SKIP] ${PROVIDER} already registered."

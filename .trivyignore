@@ -30,6 +30,11 @@ AWS-0104
 # AWS: CloudWatch log group for Lambda is not KMS-encrypted (same accepted LOW as containerised-app)
 AWS-0017
 
+# Azure: Functions runtime storage account network rules default to Allow — Deny blocks the Terraform
+# runner's data-plane access (creating containers/blobs from GitHub Actions). Not fixable without
+# a private endpoint or VNet integration, both overkill for a demo module.
+AZU-0012
+
 # Azure: Functions runtime storage account does not have blob logging enabled (internal runtime
 # store, not a user-facing data store — enabling logging adds cost and complexity for no demo value)
 AZU-0057

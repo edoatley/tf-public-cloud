@@ -281,7 +281,8 @@
         "lambda:CreateFunctionUrlConfig",
         "lambda:DeleteFunctionUrlConfig",
         "lambda:GetFunctionUrlConfig",
-        "lambda:UpdateFunctionUrlConfig"
+        "lambda:UpdateFunctionUrlConfig",
+        "lambda:GetFunctionCodeSigningConfig"
       ],
       "Resource": "*"
     },

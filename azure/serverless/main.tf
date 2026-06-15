@@ -16,10 +16,7 @@ resource "azurerm_storage_account" "this" {
   account_replication_type = "LRS"
   tags                     = var.tags
 
-  network_rules {
-    default_action = "Deny"
-    bypass         = ["AzureServices"]
-  }
+
 }
 
 resource "azurerm_storage_container" "deployments" {

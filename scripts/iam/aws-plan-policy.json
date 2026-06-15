@@ -138,7 +138,8 @@
         "lambda:ListFunctions",
         "lambda:ListVersionsByFunction",
         "lambda:GetFunctionUrlConfig",
-        "lambda:ListTags"
+        "lambda:ListTags",
+        "lambda:GetFunctionCodeSigningConfig"
       ],
       "Resource": "*"
     },
