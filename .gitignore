@@ -26,3 +26,7 @@ Thumbs.db
 
 cheat.md
 .env
+
+# Java / Gradle
+app/build
+app/.gradle

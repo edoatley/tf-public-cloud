@@ -54,3 +54,33 @@ resource "google_cloud_run_v2_service_iam_member" "public" {
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
+
+resource "google_monitoring_alert_policy" "run_5xx" {
+  display_name = "tf-public-cloud-app Cloud Run 5xx errors"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "5xx response count > 0"
+
+    condition_threshold {
+      filter = join(" AND ", [
+        "resource.type = \"cloud_run_revision\"",
+        "metric.type = \"run.googleapis.com/request_count\"",
+        "metric.labels.response_code_class = \"5xx\"",
+        "resource.labels.service_name = \"${var.service_name}\"",
+      ])
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0
+      duration        = "60s"
+
+      aggregations {
+        alignment_period   = "60s"
+        per_series_aligner = "ALIGN_SUM"
+      }
+    }
+  }
+
+  alert_strategy {
+    auto_close = "1800s"
+  }
+}
