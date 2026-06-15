@@ -258,6 +258,21 @@
         "logs:DeleteRetentionPolicy"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchAlarmsManage",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutMetricAlarm",
+        "cloudwatch:DeleteAlarms",
+        "cloudwatch:DescribeAlarms",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics",
+        "cloudwatch:TagResource",
+        "cloudwatch:UntagResource",
+        "cloudwatch:ListTagsForResource"
+      ],
+      "Resource": "*"
     }
   ]
 }

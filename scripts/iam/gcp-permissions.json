@@ -40,5 +40,11 @@
     "scope": "project",
     "resource": "gcp-sandbox-2026-18798",
     "comment": "Required by Cloud Run to bind the service account at deploy time"
+  },
+  {
+    "role": "roles/monitoring.admin",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage Cloud Monitoring alert policies for the containerised-app example"
   }
 ]

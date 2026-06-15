@@ -48,6 +48,19 @@ echo ""
 
 az account set --subscription "${AZ_SUBSCRIPTION}"
 
+echo "==> Registering required resource providers"
+for provider in microsoft.insights Microsoft.AlertsManagement; do
+  state=$(az provider show --namespace "${provider}" --query "registrationState" --output tsv 2>/dev/null || echo "NotFound")
+  if [ "${state}" = "Registered" ]; then
+    echo "    [SKIP] ${provider} already registered"
+  else
+    echo "    [REGISTER] ${provider}"
+    az provider register --namespace "${provider}" --wait
+    echo "    [OK] ${provider}"
+  fi
+done
+echo ""
+
 COUNT=$(python3 -c "import json,sys; print(len(json.load(open(sys.argv[1]))))" "${PERMISSIONS_FILE}")
 echo "    ${COUNT} assignment(s) to ${MODE}"
 echo ""
