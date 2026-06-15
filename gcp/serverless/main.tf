@@ -4,7 +4,7 @@ data "archive_file" "function" {
 
   source {
     content  = file("${path.module}/function.py")
-    filename = "function.py"
+    filename = "main.py"
   }
 
   source {
@@ -26,6 +26,9 @@ resource "google_cloudfunctions2_function" "this" {
   build_config {
     runtime     = "python312"
     entry_point = "add"
+    environment_variables = {
+      GOOGLE_FUNCTION_SOURCE = "main.py"
+    }
 
     source {
       storage_source {

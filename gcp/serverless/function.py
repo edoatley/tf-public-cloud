@@ -4,6 +4,9 @@ import functions_framework
 
 @functions_framework.http
 def add(request):
+    """
+       Simple addition function
+    """
     try:
         a = float(request.args.get("a", 0))
         b = float(request.args.get("b", 0))
