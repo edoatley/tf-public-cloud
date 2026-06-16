@@ -129,6 +129,33 @@
       "Resource": "*"
     },
     {
+      "Sid": "LambdaServerlessRead",
+      "Effect": "Allow",
+      "Action": [
+        "lambda:GetFunction",
+        "lambda:GetFunctionConfiguration",
+        "lambda:GetPolicy",
+        "lambda:ListFunctions",
+        "lambda:ListVersionsByFunction",
+        "lambda:GetFunctionUrlConfig",
+        "lambda:ListTags",
+        "lambda:GetFunctionCodeSigningConfig"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IAMRoleForLambdaRead",
+      "Effect": "Allow",
+      "Action": [
+        "iam:GetRole",
+        "iam:GetRolePolicy",
+        "iam:ListAttachedRolePolicies",
+        "iam:ListRolePolicies",
+        "iam:ListInstanceProfilesForRole"
+      ],
+      "Resource": "arn:aws:iam::*:role/tf-public-cloud-add"
+    },
+    {
       "Sid": "CloudWatchLogsRead",
       "Effect": "Allow",
       "Action": [

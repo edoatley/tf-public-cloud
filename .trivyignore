@@ -24,3 +24,26 @@ AWS-0054
 # AWS: security group allows unrestricted egress (ECS tasks must reach ECR/internet to pull
 # images; ALB must forward responses back to clients — open egress is standard for both)
 AWS-0104
+
+# These findings are intentional in the serverless demo modules.
+
+# AWS: CloudWatch log group for Lambda is not KMS-encrypted (same accepted LOW as containerised-app)
+AWS-0017
+
+# Azure: Functions runtime storage account network rules default to Allow — Deny blocks the Terraform
+# runner's data-plane access (creating containers/blobs from GitHub Actions). Not fixable without
+# a private endpoint or VNet integration, both overkill for a demo module.
+AZU-0012
+
+# Azure: Functions runtime storage account does not have blob logging enabled (internal runtime
+# store, not a user-facing data store — enabling logging adds cost and complexity for no demo value)
+AZU-0057
+
+# Azure: Functions runtime storage account uses LRS not GRS (demo module — no HA requirement)
+AZU-0058
+
+# Azure: Functions runtime storage account does not use customer-managed keys (demo module)
+AZU-0060
+
+# Azure: Functions runtime storage account does not have infrastructure double-encryption (demo module)
+AZU-0061

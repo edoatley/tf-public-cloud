@@ -13,6 +13,7 @@ on:
           - virtual-machine
           - container-registry
           - containerised-app
+          - serverless
       cloud:
         description: "Cloud to target"
         required: true
