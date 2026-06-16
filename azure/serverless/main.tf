@@ -15,8 +15,6 @@ resource "azurerm_storage_account" "this" {
   account_tier             = "Standard"
   account_replication_type = "LRS"
   tags                     = var.tags
-
-
 }
 
 resource "azurerm_storage_container" "deployments" {
@@ -53,6 +51,44 @@ resource "azurerm_storage_blob" "function" {
   source                 = data.archive_file.function.output_path
 }
 
+# Account-level SAS token — read-only, scoped to blob service only.
+# Expiry is far future; the token is only used by the Function App runtime
+# to download the deployment package from the private container.
+data "azurerm_storage_account_sas" "function" {
+  connection_string = azurerm_storage_account.this.primary_connection_string
+  https_only        = true
+  signed_version    = "2017-07-29"
+
+  start  = "2020-01-01T00:00:00Z"
+  expiry = "2030-01-01T00:00:00Z"
+
+  resource_types {
+    service   = false
+    container = false
+    object    = true
+  }
+
+  services {
+    blob  = true
+    queue = false
+    table = false
+    file  = false
+  }
+
+  permissions {
+    read    = true
+    write   = false
+    delete  = false
+    list    = false
+    add     = false
+    create  = false
+    update  = false
+    process = false
+    tag     = false
+    filter  = false
+  }
+}
+
 resource "azurerm_service_plan" "this" {
   name                = "${var.function_app_name}-plan-${random_id.suffix.hex}"
   resource_group_name = azurerm_resource_group.this.name
@@ -80,6 +116,8 @@ resource "azurerm_linux_function_app" "this" {
 
   app_settings = {
     FUNCTIONS_WORKER_RUNTIME = "python"
-    WEBSITE_RUN_FROM_PACKAGE = azurerm_storage_blob.function.url
+    # Blob name includes the source MD5, so this value changes whenever the
+    # function code changes — forcing Terraform to update the Function App.
+    WEBSITE_RUN_FROM_PACKAGE = "${azurerm_storage_blob.function.url}${data.azurerm_storage_account_sas.function.sas}"
   }
 }
