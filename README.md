@@ -41,7 +41,8 @@ gh run watch
 | Workflow | File | Description |
 | -------- | ---- | ----------- |
 | Terraform CI | `terraform.yml` | Validates all changed modules in parallel on PRs and pushes to `main` (`init`, `fmt`, `validate`, `tflint`). Also runs a Trivy IaC + secrets scan. Use `workflow_dispatch` with a `folder` input to target a specific module manually. |
-| Deploy Resource | `deploy-resource.yml` | Plans, applies, or destroys a named resource type (e.g. `object-storage`, `virtual-machine`, `container-registry`, `containerised-app`) against one or all clouds via `workflow_dispatch`. Use `resource_type=smoke-test action=plan` to verify OIDC auth and remote state connectivity. |
+| Plan Resource | `plan-resource.yml` | Runs `terraform plan` for a named resource type against one or all clouds via `workflow_dispatch`. Uses read-only credentials — safe to run on any branch. Use `resource_type=smoke-test` to verify OIDC auth and remote state connectivity. |
+| Apply Resource | `apply-resource.yml` | Applies or destroys a named resource type against one or all clouds via `workflow_dispatch`. Requires approval via the `production` GitHub environment — write credentials are only issued after the gate is passed. |
 | Build and Push | `build-and-push.yml` | Builds the Spring Boot container image and pushes it to each cloud's container registry. Run this after applying `container-registry` and before applying `containerised-app`. |
 
 All workflows authenticate via OIDC — no long-lived credentials. See `docs/BOOTSTRAP.md` for the required GitHub Actions Variables.

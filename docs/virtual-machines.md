@@ -195,21 +195,20 @@ Use the `Deploy Resource` workflow — no local credentials needed:
 
 ```sh
 # Plan all clouds
-gh workflow run deploy-resource.yml \
+gh workflow run plan-resource.yml \
   --ref virtual-machines \
   --field resource_type=virtual-machine \
-  --field cloud=all \
-  --field action=plan
+  --field cloud=all
 
 # Apply all clouds
-gh workflow run deploy-resource.yml \
+gh workflow run apply-resource.yml \
   --ref virtual-machines \
   --field resource_type=virtual-machine \
   --field cloud=all \
   --field action=apply
 
 # Destroy all clouds
-gh workflow run deploy-resource.yml \
+gh workflow run apply-resource.yml \
   --ref virtual-machines \
   --field resource_type=virtual-machine \
   --field cloud=all \

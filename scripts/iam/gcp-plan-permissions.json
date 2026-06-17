@@ -1,0 +1,20 @@
+[
+  {
+    "role": "roles/storage.objectAdmin",
+    "scope": "bucket",
+    "resource": "tf-public-cloud-gcp-state-edo",
+    "comment": "Read/write/lock state files in the Terraform state bucket"
+  },
+  {
+    "role": "roles/storage.legacyBucketReader",
+    "scope": "bucket",
+    "resource": "tf-public-cloud-gcp-state-edo",
+    "comment": "storage.buckets.get required by terraform init"
+  },
+  {
+    "role": "roles/viewer",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Read existing resources during terraform plan"
+  }
+]

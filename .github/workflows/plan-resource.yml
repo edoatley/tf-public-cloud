@@ -1,10 +1,10 @@
-name: Deploy Resource
+name: Plan Resource
 
 on:
   workflow_dispatch:
     inputs:
       resource_type:
-        description: "Resource type to deploy"
+        description: "Resource type to plan"
         required: true
         type: choice
         options:
@@ -23,15 +23,6 @@ on:
           - gcp
           - azure
           - all
-      action:
-        description: "Terraform action to run"
-        required: true
-        type: choice
-        default: plan
-        options:
-          - plan
-          - apply
-          - destroy
 
 permissions:
   contents: read
@@ -43,9 +34,9 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # aws
+  # aws — read-only role, no environment gate
   # ---------------------------------------------------------------------------
-  deploy-aws:
+  plan-aws:
     name: "aws / ${{ inputs.resource_type }}"
     if: inputs.cloud == 'aws' || inputs.cloud == 'all'
     runs-on: ubuntu-latest
@@ -58,23 +49,24 @@ jobs:
         uses: ./.github/actions/terraform-setup
         with:
           cloud: aws
-          aws_role_arn: ${{ inputs.action == 'plan' && vars.AWS_PLAN_ROLE_ARN || vars.AWS_ROLE_ARN }}
+          aws_role_arn: ${{ vars.AWS_PLAN_ROLE_ARN }}
           aws_region: ${{ vars.AWS_REGION }}
 
       - name: Run Terraform
         uses: ./.github/actions/terraform-run
         with:
           module_path: aws/${{ inputs.resource_type }}
-          action: ${{ inputs.action }}
+          action: plan
 
   # ---------------------------------------------------------------------------
-  # gcp
+  # gcp — read-only service account, default environment
   # ---------------------------------------------------------------------------
-  deploy-gcp:
+  plan-gcp:
     name: "gcp / ${{ inputs.resource_type }}"
     if: inputs.cloud == 'gcp' || inputs.cloud == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: default
     env:
       TF_VAR_ci_service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 
@@ -92,13 +84,13 @@ jobs:
         uses: ./.github/actions/terraform-run
         with:
           module_path: gcp/${{ inputs.resource_type }}
-          action: ${{ inputs.action }}
+          action: plan
           extra_vars: -var="project=${{ vars.GCP_PROJECT_ID }}"
 
   # ---------------------------------------------------------------------------
-  # azure
+  # azure — read-only app registration, default environment
   # ---------------------------------------------------------------------------
-  deploy-azure:
+  plan-azure:
     name: "azure / ${{ inputs.resource_type }}"
     if: inputs.cloud == 'azure' || inputs.cloud == 'all'
     runs-on: ubuntu-latest
@@ -122,4 +114,4 @@ jobs:
         uses: ./.github/actions/terraform-run
         with:
           module_path: azure/${{ inputs.resource_type }}
-          action: ${{ inputs.action }}
+          action: plan

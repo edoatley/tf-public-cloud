@@ -309,7 +309,7 @@ git push
 ### Step 3 — Apply the container registries
 
 ```sh
-gh workflow run deploy-resource.yml \
+gh workflow run apply-resource.yml \
   --field resource_type=container-registry \
   --field cloud=all \
   --field action=apply
@@ -328,7 +328,7 @@ gh run watch
 ### Step 5 — Deploy the app
 
 ```sh
-gh workflow run deploy-resource.yml \
+gh workflow run apply-resource.yml \
   --field resource_type=containerised-app \
   --field cloud=all \
   --field action=apply
@@ -486,14 +486,14 @@ Destroy in reverse order — app first, then registry. Destroying the registry w
 
 ```sh
 # Destroy the app
-gh workflow run deploy-resource.yml \
+gh workflow run apply-resource.yml \
   --field resource_type=containerised-app \
   --field cloud=all \
   --field action=destroy
 gh run watch
 
 # Destroy the registry
-gh workflow run deploy-resource.yml \
+gh workflow run apply-resource.yml \
   --field resource_type=container-registry \
   --field cloud=all \
   --field action=destroy

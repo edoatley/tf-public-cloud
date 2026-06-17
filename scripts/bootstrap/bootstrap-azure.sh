@@ -26,7 +26,8 @@ AZ_STATE_RG=rg-tf-public-cloud-state
 AZ_STATE_STORAGE=tfpubliccloudazstate      # 3-24 lowercase alphanumeric, globally unique
 AZ_STATE_CONTAINER=tfstate
 AZ_EXAMPLES_RG=rg-tf-public-cloud-examples
-APP_NAME=github-tf-public-cloud
+PLAN_APP_NAME=github-tf-public-cloud-plan
+APPLY_APP_NAME=github-tf-public-cloud-apply
 GITHUB_ORG=edoatley
 GITHUB_REPO=tf-public-cloud
 
@@ -38,7 +39,8 @@ echo "    Location:         ${AZ_LOCATION}"
 echo "    State RG:         ${AZ_STATE_RG}"
 echo "    State account:    ${AZ_STATE_STORAGE}"
 echo "    Examples RG:      ${AZ_EXAMPLES_RG}"
-echo "    App registration: ${APP_NAME}"
+echo "    Plan app:         ${PLAN_APP_NAME}"
+echo "    Apply app:        ${APPLY_APP_NAME}"
 echo ""
 
 az account set --subscription "${AZ_SUBSCRIPTION}"
@@ -127,39 +129,47 @@ else
   az group create --name "${AZ_EXAMPLES_RG}" --location "${AZ_LOCATION}" --output none
 fi
 
-# ---------- App Registration ----------
+# ---------- App Registrations ----------
+
+create_or_get_app() {
+  local NAME="$1"
+  local ID
+  ID=$(az ad app list --display-name "${NAME}" --query '[0].appId' --output tsv 2>/dev/null)
+  if [ -n "${ID}" ] && [ "${ID}" != "None" ]; then
+    echo "[SKIP] App registration '${NAME}' already exists (client ID: ${ID})." >&2
+  else
+    echo "[CREATE] Creating app registration '${NAME}'..." >&2
+    ID=$(az ad app create --display-name "${NAME}" --query appId --output tsv)
+    echo "[OK] Created app with client ID: ${ID}" >&2
+    echo "[CREATE] Creating service principal..." >&2
+    az ad sp create --id "${ID}" --output none
+  fi
+  echo "${ID}"
+}
 
 echo ""
-echo "==> [Azure] Setting up App Registration"
+echo "==> [Azure] Setting up App Registrations"
+PLAN_APP_ID=$(create_or_get_app "${PLAN_APP_NAME}")
+APPLY_APP_ID=$(create_or_get_app "${APPLY_APP_NAME}")
 
-APP_ID=$(az ad app list --display-name "${APP_NAME}" --query '[0].appId' --output tsv 2>/dev/null)
-
-if [ -n "${APP_ID}" ] && [ "${APP_ID}" != "None" ]; then
-  echo "[SKIP] App registration '${APP_NAME}' already exists (client ID: ${APP_ID})."
-else
-  echo "[CREATE] Creating app registration '${APP_NAME}'..."
-  APP_ID=$(az ad app create \
-    --display-name "${APP_NAME}" \
-    --query appId \
-    --output tsv)
-  echo "[OK] Created app with client ID: ${APP_ID}"
-
-  echo "[CREATE] Creating service principal..."
-  az ad sp create --id "${APP_ID}" --output none
-fi
-
-# ---------- GitHub Environment ----------
+# ---------- GitHub Environments ----------
 
 echo ""
-echo "==> [GitHub] Setting up 'default' environment"
+echo "==> [GitHub] Setting up environments"
 
-if gh api "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/default" --silent 2>/dev/null; then
-  echo "[SKIP] GitHub environment 'default' already exists."
-else
-  echo "[CREATE] Creating GitHub environment 'default'..."
-  gh api --method PUT "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/default" --silent
-  echo "[OK] Created."
-fi
+ensure_github_env() {
+  local ENV_NAME="$1"
+  if gh api "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/${ENV_NAME}" --silent 2>/dev/null; then
+    echo "[SKIP] GitHub environment '${ENV_NAME}' already exists."
+  else
+    echo "[CREATE] Creating GitHub environment '${ENV_NAME}'..."
+    gh api --method PUT "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/${ENV_NAME}" --silent
+    echo "[OK] Created."
+  fi
+}
+
+ensure_github_env "default"
+ensure_github_env "production"
 
 # ---------- Federated Credentials ----------
 
@@ -167,9 +177,10 @@ echo ""
 echo "==> [Azure] Setting up Federated Credentials"
 
 add_federated_credential() {
-  local NAME="$1"
-  local SUBJECT="$2"
-  local DESCRIPTION="$3"
+  local APP_ID="$1"
+  local NAME="$2"
+  local SUBJECT="$3"
+  local DESCRIPTION="$4"
 
   EXISTING=$(az ad app federated-credential list --id "${APP_ID}" \
     --query "[?name=='${NAME}'].name" --output tsv 2>/dev/null)
@@ -191,20 +202,56 @@ add_federated_credential() {
   fi
 }
 
-# GitHub Actions environment — covers all branches and pull requests that run
-# jobs with 'environment: default'. Azure does not support wildcard subjects
-# that span multiple colon-separated segments, so an environment credential is
-# the cleanest way to trust any branch without per-branch credentials.
+# Plan app — trusts jobs running in the 'default' environment (PRs, branches, dispatch).
+# Azure does not support wildcard subjects spanning multiple claim segments, so an
+# environment credential is the cleanest way to cover all non-privileged workflow jobs.
 add_federated_credential \
+  "${PLAN_APP_ID}" \
   "GHA-Default-Creds" \
   "repo:${GITHUB_ORG}/${GITHUB_REPO}:environment:default" \
-  "GitHub Actions — default environment (all branches)"
+  "GitHub Actions — default environment (plan / read-only)"
 
-# ---------- RBAC assignments (service principal) ----------
+# Apply app — trusts jobs running in the 'production' environment only.
+# The production environment requires reviewer approval and is restricted to
+# release-* tags, so the federated credential and the environment gate are
+# independent controls that must both pass before write credentials are issued.
+add_federated_credential \
+  "${APPLY_APP_ID}" \
+  "GHA-Production-Creds" \
+  "repo:${GITHUB_ORG}/${GITHUB_REPO}:environment:production" \
+  "GitHub Actions — production environment (apply / write)"
+
+# ---------- GitHub environment-level variables ----------
 
 echo ""
-echo "==> [Azure] Applying RBAC assignments for service principal"
-"${SCRIPT_DIR}/apply-azure-rbac.sh" "${APP_ID}" "${SCRIPT_DIR}/../iam/azure-permissions.json"
+echo "==> [GitHub] Setting environment-level AZURE_CLIENT_ID variables"
+
+set_github_env_var() {
+  local ENV_NAME="$1"
+  local VAR_NAME="$2"
+  local VAR_VALUE="$3"
+  echo "[SET] ${ENV_NAME}::${VAR_NAME} = ${VAR_VALUE}"
+  gh api --method POST \
+    "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/${ENV_NAME}/variables" \
+    --field name="${VAR_NAME}" \
+    --field value="${VAR_VALUE}" 2>/dev/null || \
+  gh api --method PATCH \
+    "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/${ENV_NAME}/variables/${VAR_NAME}" \
+    --field name="${VAR_NAME}" \
+    --field value="${VAR_VALUE}"
+}
+
+set_github_env_var "default"    "AZURE_CLIENT_ID" "${PLAN_APP_ID}"
+set_github_env_var "production" "AZURE_CLIENT_ID" "${APPLY_APP_ID}"
+
+# ---------- RBAC assignments ----------
+
+echo ""
+echo "==> [Azure] Applying RBAC assignments"
+echo "    Plan app  (${PLAN_APP_ID}) -> azure-plan-permissions.json"
+"${SCRIPT_DIR}/apply-azure-rbac.sh" "${PLAN_APP_ID}"  "${SCRIPT_DIR}/../iam/azure-plan-permissions.json"
+echo "    Apply app (${APPLY_APP_ID}) -> azure-apply-permissions.json"
+"${SCRIPT_DIR}/apply-azure-rbac.sh" "${APPLY_APP_ID}" "${SCRIPT_DIR}/../iam/azure-apply-permissions.json"
 
 # ---------- RBAC assignments (current user) ----------
 
@@ -245,7 +292,10 @@ echo "    resource_group_name  = \"${AZ_STATE_RG}\""
 echo "    storage_account_name = \"${AZ_STATE_STORAGE}\""
 echo "    container_name       = \"${AZ_STATE_CONTAINER}\""
 echo ""
-echo "    Set the following GitHub Actions Variables:"
-echo "    AZURE_CLIENT_ID       = ${APP_ID}"
+echo "    Set the following GitHub Actions repo-level Variables:"
 echo "    AZURE_TENANT_ID       = ${AZ_TENANT}"
 echo "    AZURE_SUBSCRIPTION_ID = ${AZ_SUBSCRIPTION}"
+echo ""
+echo "    Environment-level AZURE_CLIENT_ID has been set automatically:"
+echo "    default    -> ${PLAN_APP_ID}  (plan / read-only)"
+echo "    production -> ${APPLY_APP_ID} (apply / write)"

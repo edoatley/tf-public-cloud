@@ -1,0 +1,102 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <mxCell id="title" value="Object Storage Security Defaults Across AWS, GCP, and Azure" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+      <mxGeometry x="10" y="10" width="870" height="34" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="hdr-feature" value="Feature" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#24292e;strokeColor=#24292e;fontColor=#ffffff;fontStyle=1;fontSize=13;align=center;" vertex="1" parent="1">
+      <mxGeometry x="10" y="54" width="170" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="hdr-aws" value="Amazon Web Services" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e65100;strokeColor=#b34600;fontColor=#ffffff;fontStyle=1;fontSize=13;align=center;" vertex="1" parent="1">
+      <mxGeometry x="180" y="54" width="220" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="hdr-gcp" value="Google Cloud Platform" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#0d47a1;fontColor=#ffffff;fontStyle=1;fontSize=13;align=center;" vertex="1" parent="1">
+      <mxGeometry x="400" y="54" width="220" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="hdr-az" value="Microsoft Azure" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#2e7d32;strokeColor=#1b5e20;fontColor=#ffffff;fontStyle=1;fontSize=13;align=center;" vertex="1" parent="1">
+      <mxGeometry x="620" y="54" width="220" height="48" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r1-feat" value="Public Access Control" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="102" width="170" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r1-aws" value="Public Access Block (4 flags);&#xa;must be set explicitly — not on&#xa;by default" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="102" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r1-gcp" value="public_access_prevention =&#xa;&quot;enforced&quot; — hard guardrail even&#xa;if IAM is later misconfigured" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="102" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r1-az" value="allow_nested_items_to_be_public&#xa;= false on Storage Account;&#xa;container_access_type = private" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="102" width="220" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r2-feat" value="HTTPS Enforcement" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="162" width="170" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r2-aws" value="Bucket policy required: Deny&#xa;where aws:SecureTransport = false;&#xa;not enforced by default" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="162" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r2-gcp" value="Inherent — GCS has no HTTP&#xa;endpoint; no configuration needed" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="162" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r2-az" value="https_traffic_only_enabled = true&#xa;+ min_tls_version = TLS1_2 on&#xa;Storage Account" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="162" width="220" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r3-feat" value="Encryption at Rest" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="222" width="170" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r3-aws" value="SSE-S3 (AES-256) by default;&#xa;optional SSE-KMS with&#xa;bucket_key_enabled" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="222" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r3-gcp" value="Google-managed by default;&#xa;optional CMEK via dynamic&#xa;encryption block" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="222" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r3-az" value="Microsoft-managed by default;&#xa;inherited at Storage Account level&#xa;across all containers" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="222" width="220" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r4-feat" value="Network Rules" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="282" width="170" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r4-aws" value="Bucket policy conditions&#xa;(aws:SourceVpc, aws:SourceIp);&#xa;no default network deny" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="282" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r4-gcp" value="VPC Service Controls (org policy);&#xa;not configured at bucket level&#xa;in this module" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="282" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r4-az" value="Storage Account network_rules:&#xa;default_action = Deny;&#xa;bypass = AzureServices" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="282" width="220" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r5-feat" value="Versioning" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="342" width="170" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="r5-aws" value="Enabled via aws_s3_bucket_versioning&#xa;resource" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="342" width="220" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="r5-gcp" value="Enabled via versioning block&#xa;on google_storage_bucket" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="342" width="220" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="r5-az" value="versioning_enabled = true in&#xa;blob_properties block" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="342" width="220" height="48" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r6-feat" value="Soft Delete / Retention" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="390" width="170" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r6-aws" value="No native soft-delete; MFA delete&#xa;or Object Lock available for&#xa;immutability" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="390" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r6-gcp" value="No native soft-delete on buckets;&#xa;Object Retention available via&#xa;retention policy" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="390" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r6-az" value="7-day soft-delete on both blobs&#xa;and containers; set in&#xa;blob_properties block" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="390" width="220" height="60" as="geometry"/>
+    </mxCell>
+
+  </root>
+</mxGraphModel>

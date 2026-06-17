@@ -1,0 +1,21 @@
+[
+  {
+    "role": "Storage Blob Data Contributor",
+    "scope": "storage_account",
+    "resource": "tfpubliccloudazstate",
+    "resource_group": "rg-tf-public-cloud-state",
+    "comment": "Read/write state blobs in the Terraform state storage account"
+  },
+  {
+    "role": "Contributor",
+    "scope": "subscription",
+    "resource": "",
+    "comment": "Create/manage resource groups and resources for Terraform examples"
+  },
+  {
+    "role": "AcrPush",
+    "scope": "subscription",
+    "resource": "",
+    "comment": "Push container images to ACR from the build-and-push CI workflow"
+  }
+]

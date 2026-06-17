@@ -109,20 +109,19 @@ Storage Account with a private Blob Container. The example also creates the reso
 Use the `Deploy Resource` workflow dispatch — no local credentials needed:
 
 ```sh
-# Plan only (default)
-gh workflow run deploy-resource.yml \
+# Plan only
+gh workflow run plan-resource.yml \
   --field resource_type=object-storage \
-  --field cloud=all \
-  --field action=plan
+  --field cloud=all
 
 # Apply
-gh workflow run deploy-resource.yml \
+gh workflow run apply-resource.yml \
   --field resource_type=object-storage \
   --field cloud=all \
   --field action=apply
 
 # Destroy
-gh workflow run deploy-resource.yml \
+gh workflow run apply-resource.yml \
   --field resource_type=object-storage \
   --field cloud=all \
   --field action=destroy
