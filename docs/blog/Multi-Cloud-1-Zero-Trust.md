@@ -110,10 +110,17 @@ While the interface is uniform, each cloud has a different identity model undern
 
 ![OIDC Identity Models](../images/oidc-identity-models.drawio.png)
 
-**AWS** has the simplest model. One OIDC provider is registered in IAM, and two roles are created — one for
-`plan`, one for `apply` — each with separate trust policies and permission boundaries.
+Despite the different underlying mechanisms, all three clouds follow the same logical pattern: two identities
+per cloud — one for plan, one for apply — with the apply identity gated behind the `production` GitHub
+environment. The environment gate and the cloud trust condition are independent controls: both must pass
+before write credentials are issued.
 
-The **plan role** uses a broad wildcard, trusting any ref in the repo:
+The key design insight is that **read-only identities can have a broad trust scope without risk**. Plan must
+run on PRs, feature branches, and dispatch events — a wide trust policy is a usability requirement. Because
+the plan identity carries no write permissions, the breadth of the trust policy is irrelevant. The write
+identity is what needs to be locked down, and that is where the environment gate earns its place.
+
+**AWS** implements this with IAM roles and trust policies. The plan role uses a broad wildcard:
 
 ```json
 "StringLike": {
@@ -121,13 +128,7 @@ The **plan role** uses a broad wildcard, trusting any ref in the repo:
 }
 ```
 
-This breadth is intentional: plan must run on PRs, feature branches, and dispatch events. Because the
-plan role's permissions are entirely read-only, the wide trust policy carries no risk — credentials
-issued to a PR workflow simply cannot mutate anything. The role separation is the control, not the trust
-scope.
-
-The **apply role** is a different story. It carries write permissions, so its trust policy is scoped
-precisely to the `production` GitHub environment:
+The apply role uses `StringEquals` scoped to the `production` environment subject:
 
 ```json
 "StringEquals": {
@@ -135,37 +136,47 @@ precisely to the `production` GitHub environment:
 }
 ```
 
-Any workflow job that wants to assume this role must declare `environment: production`. GitHub then
-enforces the environment's protection rules — required reviewers, deployment branch restrictions —
-before issuing the OIDC token. The IAM trust policy and the environment gate are independent controls:
-both must pass. A compromised workflow or a mistaken `if:` condition cannot escalate to a write
-operation because the trust policy will reject any token not carrying the environment sub claim.
-
-This mirrors the Azure approach exactly — both clouds now use environment-scoped trust for their
-write-capable identities, making the identity model consistent across the two clouds.
-
 **GCP** adds an extra layer of indirection via Workload Identity Federation. The JWT goes first to a WIF Pool,
-then to a WIF Provider (which validates the token and maps claims), and finally triggers impersonation of a
-Service Account. The pool abstraction is genuinely useful: you can rotate or swap the upstream IdP without
-touching any of the Service Account's IAM bindings. The attribute mapping `assertion.repository` scopes trust
-to a specific repo at the provider level.
+then to a WIF Provider which validates the token and maps OIDC claims to Google attributes. The mapped
+attributes are then used to scope trust on each Service Account via a `principalSet` binding. The pool
+abstraction is genuinely useful: you can rotate or swap the upstream IdP without touching any Service
+Account IAM bindings.
 
-**Azure** is where you hit the biggest 'gotcha'. Azure federated credentials are scoped to a single entity type
-per rule — you must choose Branch, Pull Request, Environment, or Tag. In contrast, AWS accepts a wildcard `repo:org/repo:*`
-that covers all of these in one rule; Azure does not allow a single subject to span multiple entity types.
+The plan SA is bound via the repository attribute — any token from this repo can impersonate it:
+
+```
+principalSet://iam.googleapis.com/.../attribute.repository/edoatley/tf-public-cloud
+```
+
+The apply SA is bound via the environment attribute — only tokens carrying `environment:production` qualify:
+
+```
+principalSet://iam.googleapis.com/.../attribute.environment/production
+```
+
+Note that `attribute.environment` must be explicitly added to the WIF provider's attribute mapping
+(`attribute.environment=assertion.environment`) — it is not mapped by default.
+
+**Azure** is where you hit the biggest 'gotcha' with the broad approach. Azure federated credentials are
+scoped to a single entity type per rule — you must choose Branch, Pull Request, Environment, or Tag.
+A wildcard like `repo:org/repo:*` that covers all entity types in one rule is not supported.
 
 ![Azure Federated Credential](../images/azure-federated-credential-add.png)
 
-The cleanest solution is to scope the credential to `Environment: default`, which covers every workflow job
-that declares `environment: default`. Looking at the resulting subject identifier confirms it:
-`repo:edoatley/tf-public-cloud:environment:default`. The Azure workflow job must declare this explicitly:
+This turns out to work in our favour. Two App Registrations, each with a single federated credential scoped
+to an environment, maps directly onto the plan/apply pattern. The plan app trusts `environment:default`
+and the apply app trusts `environment:production`. The workflow job declares the environment, which
+determines which App Registration's credential is matched — and therefore which RBAC permissions are
+available.
 
 ```yaml
-deploy-azure:
-  runs-on: ubuntu-latest
-  environment: default        # required — matches the federated credential subject
-  env:
-    TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+plan-azure:
+  environment: default      # issues token matching the plan app's federated credential
+  ...
+
+apply-azure:
+  environment: production   # issues token matching the apply app's federated credential
+  ...
 ```
 
 ---
@@ -182,8 +193,8 @@ found while building this they could be added by rerunning the script.
 
 ```sh
 ./scripts/bootstrap/bootstrap-aws.sh   # S3 bucket + OIDC provider + 2 IAM roles (plan + apply)
-./scripts/bootstrap/bootstrap-gcp.sh   # GCS bucket + WIF pool + provider + Service Account
-./scripts/bootstrap/bootstrap-azure.sh # Storage account + 2 App Registrations + 2 Federated Credentials
+./scripts/bootstrap/bootstrap-gcp.sh   # GCS bucket + WIF pool + provider + 2 Service Accounts (plan + apply)
+./scripts/bootstrap/bootstrap-azure.sh # Storage account + 2 App Registrations + 2 Federated Credentials (plan + apply)
 ```
 
 The more interesting design decision is how permissions are managed. Rather than embedding IAM policy logic
@@ -213,7 +224,9 @@ is needed, you simply add it to the JSON file and re-run the apply script — no
 ```
 
 The same pattern holds for GCP (`apply-gcp-iam-bindings.sh`) and Azure (`apply-azure-rbac.sh`), each
-with their own idempotent apply and remove semantics.
+with their own idempotent apply and remove semantics. Each cloud has separate plan and apply permissions
+files — `gcp-plan-permissions.json` / `gcp-apply-permissions.json`, and similarly for Azure — so a
+security reviewer can audit the privilege split as a straightforward diff.
 
 ---
 
