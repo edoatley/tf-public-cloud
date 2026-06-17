@@ -13,7 +13,7 @@ in the intervening minutes can be catastrophic. We have all seen the post-mortem
 cryptomining, AI token spending sprees, or worse, enterprise data breaches that trigger severe compliance and legal 
 fallout.
 
-Trust should be based on cryptographic identity, not static passwords. OpenID Connect (OIDC) is a modern standard
+Trust *should* be based on cryptographic identity, not static passwords. OpenID Connect (OIDC) is a modern standard
 that solves this by leveraging the underlying OAuth 2.0 protocol to prove identity. By adopting OIDC, we shift
 from managing static secrets to requesting ephemeral, short-lived tokens. GitHub Actions presents a token that
 the Cloud Service Provider (CSP) natively trusts, allowing the pipeline to temporarily adopt an identity with
@@ -40,7 +40,7 @@ cloud provider, and receives back short-lived credentials. There are no secrets 
 a log is leaked, and the exact repository and branch that triggered the run is cryptographically baked into
 every token.
 
-The key JWT claims — `repo`, `ref`, and `environment` — are what the downstream trust policies  actually
+The key JWT claims — `repo`, `ref`, and `environment` — are what the downstream trust policies actually
 evaluate. Getting these right is what makes the difference between broad access and a properly scoped identity.
 To make the full exchange concrete, here is the sequence for AWS:
 
@@ -53,8 +53,8 @@ persistent:
 | Cloud | Terraform Auth Mechanism                                        | How credentials are passed                          |
 | ----- | --------------------------------------------------------------- | --------------------------------------------------- |
 | AWS   | `aws-actions/configure-aws-credentials` assumes an IAM Role ARN | Sets `AWS_*` environment variables                  |
-| GCP   | `google-github-actions/auth` exchanges the JWT via WIF          | Writes a `GOOGLE_APPLICATION_CREDENTIALS` file      |
-| Azure | No action needed — `azurerm` reads env vars directly            | Set `ARM_*` variables including `ARM_USE_OIDC=true` |
+| GCP   | `google-github-actions/auth` exchanges the JWT via Workload Identity Federation (WIF) | Writes a `GOOGLE_APPLICATION_CREDENTIALS` file |
+| Azure | `azurerm` provider reads `ARM_*` env vars with `ARM_USE_OIDC=true` | Set `ARM_CLIENT_ID`, `ARM_TENANT_ID`, `ARM_SUBSCRIPTION_ID`, `ARM_USE_OIDC=true` |
 
 ## Three Clouds, One Pattern — But the Details Differ
 
@@ -96,15 +96,10 @@ gets one step, and the inputs are passed in from the calling workflow:
     echo "ARM_USE_OIDC=true"                                        >> "$GITHUB_ENV"
 ```
 
-Azure is the odd one out in a different way to the others. The `azurerm` Terraform provider does not read
-from an Azure CLI session — it reads `ARM_*` environment variables directly. Setting `ARM_USE_OIDC=true`
-alongside the client, tenant, and subscription IDs tells the provider to request a token from the federated
-credential rather than expect a client secret. No official action is required, just four environment variables
-for Terraform to use.
-
-Note: the composite `cloud-login` action in my code does also call `azure/login` to establish a CLI session, 
-but that is only needed by other workflows that use `az` commands directly — such as `az acr login` in the container
-build pipeline. For Terraform authentication, it is entirely superfluous.
+Azure takes a different approach. The `azurerm` Terraform provider does not read from an Azure CLI session —
+it reads `ARM_*` environment variables directly. Setting `ARM_USE_OIDC=true` alongside the client, tenant,
+and subscription IDs tells the provider to request a token from the federated credential rather than expect
+a client secret. No GitHub Action is required for Terraform itself; just four environment variables.
 
 While the interface is uniform, each cloud has a different identity model underneath:
 
@@ -115,10 +110,10 @@ per cloud — one for plan, one for apply — with the apply identity gated behi
 environment. The environment gate and the cloud trust condition are independent controls: both must pass
 before write credentials are issued.
 
-The key design insight is that **read-only identities can have a broad trust scope without risk**. Plan must
-run on PRs, feature branches, and dispatch events — a wide trust policy is a usability requirement. Because
-the plan identity carries no write permissions, the breadth of the trust policy is irrelevant. The write
-identity is what needs to be locked down, and that is where the environment gate earns its place.
+The key design insight is that **read-only identities can safely have broad trust scopes**. The breadth of
+the trust policy is irrelevant when the plan identity carries no write permissions — it allows `plan` to run
+on PRs, feature branches, and dispatch events, which is a usability requirement. The **write identity**, by
+contrast, must be strictly scoped and only reachable via a trusted subject claim.
 
 **AWS** implements this with IAM roles and trust policies. The plan role uses a broad wildcard:
 
@@ -139,7 +134,7 @@ The apply role uses `StringEquals` scoped to the `production` environment subjec
 **GCP** adds an extra layer of indirection via Workload Identity Federation. The JWT goes first to a WIF Pool,
 then to a WIF Provider which validates the token and maps OIDC claims to Google attributes. The mapped
 attributes are then used to scope trust on each Service Account via a `principalSet` binding. The pool
-abstraction is genuinely useful: you can rotate or swap the upstream IdP without touching any Service
+abstraction is useful in that you can rotate or swap the upstream IdP without touching any Service
 Account IAM bindings.
 
 The plan SA is bound via the repository attribute — any token from this repo can impersonate it:
@@ -157,9 +152,10 @@ principalSet://iam.googleapis.com/.../attribute.environment/production
 Note that `attribute.environment` must be explicitly added to the WIF provider's attribute mapping
 (`attribute.environment=assertion.environment`) — it is not mapped by default.
 
-**Azure** is where you hit the biggest 'gotcha' with the broad approach. Azure federated credentials are
-scoped to a single entity type per rule — you must choose Branch, Pull Request, Environment, or Tag.
-A wildcard like `repo:org/repo:*` that covers all entity types in one rule is not supported.
+**Azure** is where you hit the biggest 'gotcha' with the broad read-only approach. Azure federated
+credentials are scoped to a single entity type per rule — you must choose Branch, Pull Request,
+Environment, or Tag. A wildcard like `repo:org/repo:*` that covers all entity types in one rule is
+not supported.
 
 ![Azure Federated Credential](../images/azure-federated-credential-add.png)
 
@@ -170,26 +166,38 @@ determines which App Registration's credential is matched — and therefore whic
 available.
 
 ```yaml
+# issues token matching the plan app's federated credential
 plan-azure:
-  environment: default      # issues token matching the plan app's federated credential
-  ...
-
-apply-azure:
-  environment: production   # issues token matching the apply app's federated credential
-  ...
+  environment: default
 ```
+
+```yaml
+# issues token matching the apply app's federated credential
+apply-azure:
+  environment: production
+```
+
+Both environments must be created in the GitHub repository settings before the federated credentials will
+match. The bootstrap script handles this automatically via the `gh` CLI:
+
+```sh
+gh api --method PUT repos/edoatley/tf-public-cloud/environments/default
+gh api --method PUT repos/edoatley/tf-public-cloud/environments/production
+```
+
+The `production` environment is where you configure reviewer approval and deployment branch/tag
+restrictions — that is the human gate that sits in front of the IAM trust condition.
 
 ---
 
 ## The Bootstrap: Solving the Chicken-and-Egg Problem
 
-Here is the problem every IaC project faces: Terraform needs infrastructure to run — state buckets, OIDC
+Every IaC project faces a bootstrap problem: Terraform needs infrastructure to run — state buckets, OIDC
 providers, IAM roles — but you need to run something to create that infrastructure in the first place.
 
-My chosen solution was three idempotent bash scripts in `scripts/bootstrap/`, one per cloud. Run once by a human with
-sufficient permissions using their local CLI credentials. Each script is safe to re-run as the scripts check for the
-existence of every resource before creating it. This was useful as when missing permissions, providers etc were
-found while building this they could be added by rerunning the script.
+My chosen solution was three idempotent bash scripts in `scripts/bootstrap/`, one per cloud. Each is run
+once by a human with sufficient local CLI permissions, and is safe to re-run if something is missing or
+needs updating — permissions gaps, new providers, and so on are all handled by re-running the relevant script.
 
 ```sh
 ./scripts/bootstrap/bootstrap-aws.sh   # S3 bucket + OIDC provider + 2 IAM roles (plan + apply)
@@ -224,9 +232,12 @@ is needed, you simply add it to the JSON file and re-run the apply script — no
 ```
 
 The same pattern holds for GCP (`apply-gcp-iam-bindings.sh`) and Azure (`apply-azure-rbac.sh`), each
-with their own idempotent apply and remove semantics. Each cloud has separate plan and apply permissions
-files — `gcp-plan-permissions.json` / `gcp-apply-permissions.json`, and similarly for Azure — so a
-security reviewer can audit the privilege split as a straightforward diff.
+with their own idempotent apply and remove semantics. Note that these JSON files are a bespoke format
+defined for this project — thin wrappers that the apply scripts translate into the appropriate cloud CLI
+calls. They are not native AWS policy documents, GCP IAM bindings, or Azure RBAC assignments; the scripts
+handle that translation. Each cloud has separate plan and apply permissions files —
+`gcp-plan-permissions.json` / `gcp-apply-permissions.json`, and similarly for Azure — so a security
+reviewer can audit the privilege split as a straightforward diff without reading any shell logic.
 
 ---
 
@@ -234,7 +245,7 @@ security reviewer can audit the privilege split as a straightforward diff.
 
 Before deploying any real resources, you need to know the plumbing actually works. The smoke-test modules
 exist for exactly this purpose. They contain only Terraform `data` sources — nothing billable, nothing
-destructive and nothing beyond a successful plan output.
+destructive, and nothing beyond a successful plan output.
 
 ```hcl
 # aws/smoke-test/main.tf
