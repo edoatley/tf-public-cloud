@@ -1,0 +1,56 @@
+[
+  {
+    "role": "roles/storage.objectAdmin",
+    "scope": "bucket",
+    "resource": "tf-public-cloud-gcp-state-edo",
+    "comment": "Read/write state files in the Terraform state bucket"
+  },
+  {
+    "role": "roles/storage.legacyBucketReader",
+    "scope": "bucket",
+    "resource": "tf-public-cloud-gcp-state-edo",
+    "comment": "storage.buckets.get required by terraform init"
+  },
+  {
+    "role": "roles/storage.admin",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage GCS buckets for the object-storage example"
+  },
+  {
+    "role": "roles/compute.admin",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage Compute Engine resources for the virtual-machine example"
+  },
+  {
+    "role": "roles/artifactregistry.admin",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage Artifact Registry repositories and set IAM bindings for the container-registry example"
+  },
+  {
+    "role": "roles/run.admin",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage Cloud Run services for the containerised-app example"
+  },
+  {
+    "role": "roles/iam.serviceAccountUser",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Required by Cloud Run to bind the service account at deploy time"
+  },
+  {
+    "role": "roles/monitoring.admin",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage Cloud Monitoring alert policies for the containerised-app example"
+  },
+  {
+    "role": "roles/cloudfunctions.admin",
+    "scope": "project",
+    "resource": "gcp-sandbox-2026-18798",
+    "comment": "Create/manage Cloud Functions v2 for the serverless example (admin required for create/delete)"
+  }
+]

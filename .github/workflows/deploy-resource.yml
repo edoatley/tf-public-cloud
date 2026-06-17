@@ -94,13 +94,43 @@ jobs:
           action: ${{ inputs.action }}
 
   # ---------------------------------------------------------------------------
-  # gcp
+  # gcp — plan (no environment gate, read-only service account)
   # ---------------------------------------------------------------------------
-  deploy-gcp:
-    name: "gcp / ${{ inputs.resource_type }}"
-    if: inputs.cloud == 'gcp' || inputs.cloud == 'all'
+  deploy-gcp-plan:
+    name: "gcp / ${{ inputs.resource_type }} / plan"
+    if: (inputs.cloud == 'gcp' || inputs.cloud == 'all') && inputs.action == 'plan'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: default
+    env:
+      TF_VAR_ci_service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Terraform and authenticate
+        uses: ./.github/actions/terraform-setup
+        with:
+          cloud: gcp
+          gcp_wif_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          gcp_service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Run Terraform
+        uses: ./.github/actions/terraform-run
+        with:
+          module_path: gcp/${{ inputs.resource_type }}
+          action: plan
+          extra_vars: -var="project=${{ vars.GCP_PROJECT_ID }}"
+
+  # ---------------------------------------------------------------------------
+  # gcp — apply / destroy (production environment gate, write service account)
+  # ---------------------------------------------------------------------------
+  deploy-gcp-mutate:
+    name: "gcp / ${{ inputs.resource_type }} / ${{ inputs.action }}"
+    if: (inputs.cloud == 'gcp' || inputs.cloud == 'all') && inputs.action != 'plan'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
     env:
       TF_VAR_ci_service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
 

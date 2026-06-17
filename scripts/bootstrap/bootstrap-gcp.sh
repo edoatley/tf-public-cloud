@@ -25,10 +25,12 @@ GITHUB_ORG=edoatley
 GITHUB_REPO=tf-public-cloud
 WIF_POOL_ID=github-pool
 WIF_PROVIDER_ID=github-provider
-GSA_NAME=github-actions-tf
+GSA_PLAN_NAME=github-actions-tf-plan
+GSA_APPLY_NAME=github-actions-tf-apply
 
 # Derived values — do not edit
-GSA_EMAIL="${GSA_NAME}@${GCP_PROJECT}.iam.gserviceaccount.com"
+GSA_PLAN_EMAIL="${GSA_PLAN_NAME}@${GCP_PROJECT}.iam.gserviceaccount.com"
+GSA_APPLY_EMAIL="${GSA_APPLY_NAME}@${GCP_PROJECT}.iam.gserviceaccount.com"
 PROJECT_NUMBER=$(gcloud projects describe "${GCP_PROJECT}" --format="value(projectNumber)")
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -36,8 +38,9 @@ echo "==> [GCP] Bootstrapping Terraform state backend and GitHub Actions WIF"
 echo "    Project:        ${GCP_PROJECT} (${PROJECT_NUMBER})"
 echo "    Region:         ${GCP_REGION}"
 echo "    State bucket:   gs://${TF_STATE_BUCKET}"
-echo "    WIF pool:       ${WIF_POOL_ID}"
-echo "    Service account: ${GSA_EMAIL}"
+echo "    WIF pool:        ${WIF_POOL_ID}"
+echo "    Plan SA:         ${GSA_PLAN_EMAIL}"
+echo "    Apply SA:        ${GSA_APPLY_EMAIL}"
 echo ""
 
 # ---------- Enable required APIs ----------
@@ -98,45 +101,98 @@ fi
 if gcloud iam workload-identity-pools providers describe "${WIF_PROVIDER_ID}" \
     --workload-identity-pool="${WIF_POOL_ID}" \
     --location=global --project="${GCP_PROJECT}" 2>/dev/null | grep -q name; then
-  echo "[SKIP] WIF provider '${WIF_PROVIDER_ID}' already exists."
+  echo "[UPDATE] WIF provider '${WIF_PROVIDER_ID}' exists — updating attribute mapping..."
+  gcloud iam workload-identity-pools providers update-oidc "${WIF_PROVIDER_ID}" \
+    --workload-identity-pool="${WIF_POOL_ID}" \
+    --location=global \
+    --issuer-uri="https://token.actions.githubusercontent.com" \
+    --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref,attribute.environment=assertion.environment" \
+    --attribute-condition="assertion.repository == \"${GITHUB_ORG}/${GITHUB_REPO}\"" \
+    --project="${GCP_PROJECT}"
 else
   echo "[CREATE] Creating OIDC provider '${WIF_PROVIDER_ID}'..."
   gcloud iam workload-identity-pools providers create-oidc "${WIF_PROVIDER_ID}" \
     --workload-identity-pool="${WIF_POOL_ID}" \
     --location=global \
     --issuer-uri="https://token.actions.githubusercontent.com" \
-    --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref" \
+    --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref,attribute.environment=assertion.environment" \
     --attribute-condition="assertion.repository == \"${GITHUB_ORG}/${GITHUB_REPO}\"" \
     --project="${GCP_PROJECT}"
 fi
 
-# ---------- Service Account ----------
+# ---------- Service Accounts ----------
 
 echo ""
-echo "==> [GCP] Setting up Service Account"
+echo "==> [GCP] Setting up Service Accounts"
 
-if gcloud iam service-accounts describe "${GSA_EMAIL}" --project="${GCP_PROJECT}" 2>/dev/null | grep -q email; then
-  echo "[SKIP] Service account '${GSA_EMAIL}' already exists."
-else
-  echo "[CREATE] Creating service account '${GSA_NAME}'..."
-  gcloud iam service-accounts create "${GSA_NAME}" \
-    --display-name="GitHub Actions Terraform" \
-    --project="${GCP_PROJECT}"
-fi
+create_or_skip_sa() {
+  local NAME="$1"
+  local EMAIL="$2"
+  local DISPLAY="$3"
+  if gcloud iam service-accounts describe "${EMAIL}" --project="${GCP_PROJECT}" 2>/dev/null | grep -q email; then
+    echo "[SKIP] Service account '${EMAIL}' already exists."
+  else
+    echo "[CREATE] Creating service account '${NAME}'..."
+    gcloud iam service-accounts create "${NAME}" \
+      --display-name="${DISPLAY}" \
+      --project="${GCP_PROJECT}"
+  fi
+}
 
-# ---------- Bind WIF provider to Service Account ----------
+create_or_skip_sa "${GSA_PLAN_NAME}"  "${GSA_PLAN_EMAIL}"  "GitHub Actions Terraform — plan (read-only)"
+create_or_skip_sa "${GSA_APPLY_NAME}" "${GSA_APPLY_EMAIL}" "GitHub Actions Terraform — apply (write)"
 
-echo "[CONFIG] Binding WIF provider to service account..."
-gcloud iam service-accounts add-iam-policy-binding "${GSA_EMAIL}" \
+# ---------- Bind WIF provider to Service Accounts ----------
+
+echo ""
+echo "==> [GCP] Binding WIF provider to service accounts"
+
+# Plan SA — trusted for any token from this repository (any branch, PR, or dispatch)
+echo "[CONFIG] Binding plan SA via repository attribute..."
+gcloud iam service-accounts add-iam-policy-binding "${GSA_PLAN_EMAIL}" \
   --role="roles/iam.workloadIdentityUser" \
   --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${WIF_POOL_ID}/attribute.repository/${GITHUB_ORG}/${GITHUB_REPO}" \
+  --project="${GCP_PROJECT}"
+
+# Apply SA — trusted only for tokens carrying environment:production
+# (GitHub sets this claim when a job declares `environment: production`)
+echo "[CONFIG] Binding apply SA via environment:production attribute..."
+gcloud iam service-accounts add-iam-policy-binding "${GSA_APPLY_EMAIL}" \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${WIF_POOL_ID}/attribute.environment/production" \
   --project="${GCP_PROJECT}"
 
 # ---------- Grant IAM permissions ----------
 
 echo ""
-echo "==> [GCP] Applying IAM bindings from scripts/iam/gcp-permissions.json"
-"${SCRIPT_DIR}/apply-gcp-iam-bindings.sh" "${GSA_EMAIL}" "${SCRIPT_DIR}/../iam/gcp-permissions.json"
+echo "==> [GCP] Applying IAM bindings"
+echo "    Plan SA  (${GSA_PLAN_EMAIL}) -> gcp-plan-permissions.json"
+"${SCRIPT_DIR}/apply-gcp-iam-bindings.sh" "${GSA_PLAN_EMAIL}"  "${SCRIPT_DIR}/../iam/gcp-plan-permissions.json"
+echo "    Apply SA (${GSA_APPLY_EMAIL}) -> gcp-apply-permissions.json"
+"${SCRIPT_DIR}/apply-gcp-iam-bindings.sh" "${GSA_APPLY_EMAIL}" "${SCRIPT_DIR}/../iam/gcp-apply-permissions.json"
+
+# ---------- GitHub environment-level variables ----------
+
+echo ""
+echo "==> [GitHub] Setting environment-level GCP_SERVICE_ACCOUNT variables"
+
+set_github_env_var() {
+  local ENV_NAME="$1"
+  local VAR_NAME="$2"
+  local VAR_VALUE="$3"
+  echo "[SET] ${ENV_NAME}::${VAR_NAME} = ${VAR_VALUE}"
+  gh api --method POST \
+    "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/${ENV_NAME}/variables" \
+    --field name="${VAR_NAME}" \
+    --field value="${VAR_VALUE}" 2>/dev/null || \
+  gh api --method PATCH \
+    "repos/${GITHUB_ORG}/${GITHUB_REPO}/environments/${ENV_NAME}/variables/${VAR_NAME}" \
+    --field name="${VAR_NAME}" \
+    --field value="${VAR_VALUE}"
+}
+
+set_github_env_var "default"    "GCP_SERVICE_ACCOUNT" "${GSA_PLAN_EMAIL}"
+set_github_env_var "production" "GCP_SERVICE_ACCOUNT" "${GSA_APPLY_EMAIL}"
 
 # ---------- Summary ----------
 
@@ -148,6 +204,10 @@ echo ""
 echo "    Add the following to gcp/*/backend.tf:"
 echo "    bucket = \"${TF_STATE_BUCKET}\""
 echo ""
-echo "    Set the following GitHub Actions Variables:"
-echo "    GCP_WIF_PROVIDER    = ${WIF_PROVIDER_RESOURCE}"
-echo "    GCP_SERVICE_ACCOUNT = ${GSA_EMAIL}"
+echo "    Set the following GitHub Actions repo-level Variables:"
+echo "    GCP_WIF_PROVIDER = ${WIF_PROVIDER_RESOURCE}"
+echo "    GCP_PROJECT_ID   = ${GCP_PROJECT}"
+echo ""
+echo "    Environment-level GCP_SERVICE_ACCOUNT has been set automatically:"
+echo "    default    -> ${GSA_PLAN_EMAIL}  (plan / read-only)"
+echo "    production -> ${GSA_APPLY_EMAIL} (apply / write)"
