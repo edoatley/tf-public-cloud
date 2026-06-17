@@ -231,7 +231,7 @@ terraform {
 
 ## Verify OIDC authentication and Terraform connectivity
 
-Once bootstrapped, run the smoke test via `deploy-resource.yml` to confirm that GitHub Actions can
+Once bootstrapped, run the smoke test via `plan-resource.yml` to confirm that GitHub Actions can
 authenticate to each cloud via OIDC and that Terraform can reach the remote state backend and
 resolve live data sources. The smoke-test modules live in `{cloud}/smoke-test/` and contain only
 `data` sources — no resources are created.
@@ -245,19 +245,19 @@ A successful run proves:
 
 ```sh
 # Smoke-test a single cloud
-gh workflow run deploy-resource.yml \
+gh workflow run plan-resource.yml \
   --field resource_type=smoke-test \
   --field cloud=aws \
   --field action=plan
 
 # Smoke-test all three clouds at once
-gh workflow run deploy-resource.yml \
+gh workflow run plan-resource.yml \
   --field resource_type=smoke-test \
   --field cloud=all \
   --field action=plan
 
 # Watch the latest run
-gh run list --workflow=deploy-resource.yml --limit=1
+gh run list --workflow=plan-resource.yml --limit=1
 gh run watch
 ```
 

@@ -239,7 +239,7 @@ git push
 ### Step 3 — Deploy
 
 ```sh
-gh workflow run deploy-resource.yml \
+gh workflow run apply-resource.yml \
   --field resource_type=serverless \
   --field cloud=all \
   --field action=apply
@@ -273,7 +273,7 @@ Expected output for each cloud:
 ### Step 5 — Destroy
 
 ```sh
-gh workflow run deploy-resource.yml \
+gh workflow run apply-resource.yml \
   --field resource_type=serverless \
   --field cloud=all \
   --field action=destroy

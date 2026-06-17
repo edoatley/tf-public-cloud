@@ -242,10 +242,9 @@ output "caller_arn" {
 Trigger the smoke test across all three clouds simultaneously with a single `gh` command:
 
 ```sh
-gh workflow run deploy-resource.yml \
+gh workflow run plan-resource.yml \
   --field resource_type=smoke-test \
-  --field cloud=all \
-  --field action=plan
+  --field cloud=all
 ```
 
 A passing run proves three things in one go:
