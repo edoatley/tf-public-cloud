@@ -181,9 +181,9 @@ existence of every resource before creating it. This was useful as when missing 
 found while building this they could be added by rerunning the script.
 
 ```sh
-./scripts/bootstrap/bootstrap-aws.sh   # S3 bucket + OIDC provider + 2 IAM roles
+./scripts/bootstrap/bootstrap-aws.sh   # S3 bucket + OIDC provider + 2 IAM roles (plan + apply)
 ./scripts/bootstrap/bootstrap-gcp.sh   # GCS bucket + WIF pool + provider + Service Account
-./scripts/bootstrap/bootstrap-azure.sh # Storage account + App Registration + Federated Credential
+./scripts/bootstrap/bootstrap-azure.sh # Storage account + 2 App Registrations + 2 Federated Credentials
 ```
 
 The more interesting design decision is how permissions are managed. Rather than embedding IAM policy logic
