@@ -43,11 +43,11 @@ env:
 
 jobs:
   # ---------------------------------------------------------------------------
-  # aws
+  # aws — plan (no environment gate, read-only role)
   # ---------------------------------------------------------------------------
-  deploy-aws:
-    name: "aws / ${{ inputs.resource_type }}"
-    if: inputs.cloud == 'aws' || inputs.cloud == 'all'
+  deploy-aws-plan:
+    name: "aws / ${{ inputs.resource_type }} / plan"
+    if: (inputs.cloud == 'aws' || inputs.cloud == 'all') && inputs.action == 'plan'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -58,7 +58,33 @@ jobs:
         uses: ./.github/actions/terraform-setup
         with:
           cloud: aws
-          aws_role_arn: ${{ inputs.action == 'plan' && vars.AWS_PLAN_ROLE_ARN || vars.AWS_ROLE_ARN }}
+          aws_role_arn: ${{ vars.AWS_PLAN_ROLE_ARN }}
+          aws_region: ${{ vars.AWS_REGION }}
+
+      - name: Run Terraform
+        uses: ./.github/actions/terraform-run
+        with:
+          module_path: aws/${{ inputs.resource_type }}
+          action: plan
+
+  # ---------------------------------------------------------------------------
+  # aws — apply / destroy (environment gate required, write role)
+  # ---------------------------------------------------------------------------
+  deploy-aws-mutate:
+    name: "aws / ${{ inputs.resource_type }} / ${{ inputs.action }}"
+    if: (inputs.cloud == 'aws' || inputs.cloud == 'all') && inputs.action != 'plan'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Terraform and authenticate
+        uses: ./.github/actions/terraform-setup
+        with:
+          cloud: aws
+          aws_role_arn: ${{ vars.AWS_ROLE_ARN }}
           aws_region: ${{ vars.AWS_REGION }}
 
       - name: Run Terraform
@@ -96,14 +122,43 @@ jobs:
           extra_vars: -var="project=${{ vars.GCP_PROJECT_ID }}"
 
   # ---------------------------------------------------------------------------
-  # azure
+  # azure — plan (default environment, read-only app registration)
   # ---------------------------------------------------------------------------
-  deploy-azure:
-    name: "azure / ${{ inputs.resource_type }}"
-    if: inputs.cloud == 'azure' || inputs.cloud == 'all'
+  deploy-azure-plan:
+    name: "azure / ${{ inputs.resource_type }} / plan"
+    if: (inputs.cloud == 'azure' || inputs.cloud == 'all') && inputs.action == 'plan'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: default
+    env:
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Terraform and authenticate
+        uses: ./.github/actions/terraform-setup
+        with:
+          cloud: azure
+          azure_client_id: ${{ vars.AZURE_CLIENT_ID }}
+          azure_tenant_id: ${{ vars.AZURE_TENANT_ID }}
+          azure_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Run Terraform
+        uses: ./.github/actions/terraform-run
+        with:
+          module_path: azure/${{ inputs.resource_type }}
+          action: plan
+
+  # ---------------------------------------------------------------------------
+  # azure — apply / destroy (production environment gate, write app registration)
+  # ---------------------------------------------------------------------------
+  deploy-azure-mutate:
+    name: "azure / ${{ inputs.resource_type }} / ${{ inputs.action }}"
+    if: (inputs.cloud == 'azure' || inputs.cloud == 'all') && inputs.action != 'plan'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
     env:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 

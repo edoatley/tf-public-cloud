@@ -1,0 +1,102 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <mxCell id="title" value="VM Networking Models Across AWS, GCP, and Azure" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+      <mxGeometry x="10" y="10" width="870" height="34" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="hdr-feature" value="Feature" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#24292e;strokeColor=#24292e;fontColor=#ffffff;fontStyle=1;fontSize=13;align=center;" vertex="1" parent="1">
+      <mxGeometry x="10" y="54" width="170" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="hdr-aws" value="Amazon Web Services" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e65100;strokeColor=#b34600;fontColor=#ffffff;fontStyle=1;fontSize=13;align=center;" vertex="1" parent="1">
+      <mxGeometry x="180" y="54" width="220" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="hdr-gcp" value="Google Cloud Platform" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#0d47a1;fontColor=#ffffff;fontStyle=1;fontSize=13;align=center;" vertex="1" parent="1">
+      <mxGeometry x="400" y="54" width="220" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="hdr-az" value="Microsoft Azure" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#2e7d32;strokeColor=#1b5e20;fontColor=#ffffff;fontStyle=1;fontSize=13;align=center;" vertex="1" parent="1">
+      <mxGeometry x="620" y="54" width="220" height="48" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r1-feat" value="Public IP" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="102" width="170" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r1-aws" value="Ephemeral via map_public_ip_on_launch&#xa;(demo choice; EIP would give a&#xa;stable address in production)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="102" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r1-gcp" value="Reserved static regional IP&#xa;(google_compute_address) — explicit" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="102" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r1-az" value="Standard SKU static IP resource&#xa;(azurerm_public_ip) — explicit" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="102" width="220" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r2-feat" value="Internet Routing" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="162" width="170" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r2-aws" value="Explicit — Internet Gateway + Route&#xa;Table required; no IGW = no egress" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="162" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r2-gcp" value="Implicit — Google routing fabric&#xa;handles egress automatically" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="162" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r2-az" value="Implicit — egress automatic when&#xa;NIC has a public IP attached" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="162" width="220" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r3-feat" value="Network Isolation" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="222" width="170" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r3-aws" value="VPC (regional) + subnet&#xa;(availability-zone scoped)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="222" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r3-gcp" value="VPC (global) + subnetwork&#xa;(regional); custom-mode to avoid&#xa;auto-subnets in every region" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="222" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r3-az" value="VNet (regional) + subnet;&#xa;no separate gateway resource&#xa;needed" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="222" width="220" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r4-feat" value="Firewall Model" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="282" width="170" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r4-aws" value="Security Group on ENI (stateful);&#xa;inline ingress/egress rules" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="282" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r4-gcp" value="VPC-level Firewall Rules scoped&#xa;to instances via network tags&#xa;(e.g. ssh-enabled)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="282" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r4-az" value="NSG on NIC (stateful); priority-&#xa;numbered rules (lower = first)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="282" width="220" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r5-feat" value="SSH Key Injection" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="342" width="170" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r5-aws" value="aws_key_pair resource (regional);&#xa;injected via cloud-init" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="342" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r5-gcp" value="Instance metadata ssh-keys&#xa;key-value pair; no separate&#xa;resource required" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="342" width="220" height="60" as="geometry"/>
+    </mxCell>
+    <mxCell id="r5-az" value="Inline admin_ssh_key block on&#xa;VM resource; password auth&#xa;disabled (v4 provider)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="342" width="220" height="60" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="r6-feat" value="Default SSH User" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#cccccc;fontColor=#333333;fontStyle=1;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="10" y="402" width="170" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="r6-aws" value="ec2-user (Amazon Linux 2023)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="180" y="402" width="220" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="r6-gcp" value="debian (Debian 12)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="400" y="402" width="220" height="48" as="geometry"/>
+    </mxCell>
+    <mxCell id="r6-az" value="azureuser (Ubuntu 22.04 LTS)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f1f8e9;strokeColor=#2e7d32;fontColor=#333333;fontSize=11;align=left;spacingLeft=8;" vertex="1" parent="1">
+      <mxGeometry x="620" y="402" width="220" height="48" as="geometry"/>
+    </mxCell>
+
+  </root>
+</mxGraphModel>

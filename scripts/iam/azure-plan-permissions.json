@@ -1,0 +1,15 @@
+[
+  {
+    "role": "Reader",
+    "scope": "subscription",
+    "resource": "",
+    "comment": "Read existing resources during terraform plan"
+  },
+  {
+    "role": "Storage Blob Data Contributor",
+    "scope": "storage_account",
+    "resource": "tfpubliccloudazstate",
+    "resource_group": "rg-tf-public-cloud-state",
+    "comment": "Read/write state blobs — plan needs to read and lock state"
+  }
+]

@@ -174,10 +174,8 @@ APPLY_TRUST=$(cat <<EOF
     "Action": "sts:AssumeRoleWithWebIdentity",
     "Condition": {
       "StringEquals": {
-        "token.actions.githubusercontent.com:aud": "${OIDC_AUDIENCE}"
-      },
-      "StringLike": {
-        "token.actions.githubusercontent.com:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:*"
+        "token.actions.githubusercontent.com:aud": "${OIDC_AUDIENCE}",
+        "token.actions.githubusercontent.com:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:environment:production"
       }
     }
   }]
