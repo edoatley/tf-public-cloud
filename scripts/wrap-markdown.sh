@@ -50,6 +50,8 @@ def is_verbatim(line):
         or s.strip() in ("---", "+++")     # front-matter fence
         or re.match(r"^\s*!?\[.*\]\(.*\)\s*$", s)  # standalone image/link
         or re.match(r"^\s*[-*+]\s*$", s)   # bare list bullet
+        or re.match(r"^\s*\|", s)          # markdown table row
+        or re.match(r"^\s*[-|: ]+$", s)    # table separator row
     )
 
 def list_indent(line):

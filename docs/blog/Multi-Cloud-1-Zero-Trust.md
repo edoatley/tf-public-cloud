@@ -29,22 +29,40 @@ entire pipeline works without provisioning a single billable resource.
 The core idea is simple: instead of handing a pipeline a password, you teach the cloud provider
 to *trust a third party* — GitHub — to vouch for it.
 
-GitHub acts as an **Identity Provider (IdP)**. When a workflow runs, GitHub mints a
-short-lived, signed JSON Web Token (JWT) that describes exactly *who* is asking: which
-repository, which branch, which environment. The cloud provider has been pre-configured to
-trust JWTs from GitHub's OIDC endpoint, so it can verify the signature without any shared
-secret. If the token is valid and the claims match the rules on the IAM role (e.g.
-`repo:myorg/myrepo:ref:refs/heads/main`), the cloud provider exchanges it for a set of
-temporary credentials — scoped, expiring, and never stored anywhere.
+GitHub acts as an **Identity Provider (IdP)**. When a workflow runs, GitHub mints a short-lived
+signed JWT and presents it to the cloud provider, which verifies the signature against GitHub's
+public OIDC endpoint — no shared secret required. If the claims match the trust policy on the
+IAM role, the cloud exchanges the token for temporary credentials that are scoped, expiring,
+and never stored anywhere.
 
-From the pipeline's perspective the experience is clean: the workflow requests a token, sends
-it to the cloud provider, and receives back short-lived credentials. There are no secrets to
-rotate, no blast radius if a log is leaked, and the exact repository and branch that triggered
-the run is cryptographically baked into every token.
+Here is what that JWT payload actually looks like:
 
-The key JWT claims — `repo`, `ref`, and `environment` — are what the downstream trust policies
-actually evaluate. Getting these right is what makes the difference between broad access and a
-properly scoped identity. To make the full exchange concrete, here is the sequence for AWS:
+```json
+{
+  "jti": "6f4b4b3e-1234-5678-abcd-ef0123456789",
+  "sub": "repo:edoatley/tf-public-cloud:environment:production",
+  "aud": "https://github.com/edoatley",
+  "ref": "refs/heads/main",
+  "sha": "abc123def456...",
+  "repository": "edoatley/tf-public-cloud",
+  "repository_owner": "edoatley",
+  "run_id": "9876543210",
+  "run_number": "42",
+  "actor": "edoatley",
+  "workflow": "Terraform",
+  "job_workflow_ref": "edoatley/tf-public-cloud/.github/workflows/terraform.yml@refs/heads/main",
+  "environment": "production",
+  "iss": "https://token.actions.githubusercontent.com",
+  "nbf": 1700000000,
+  "exp": 1700003600,
+  "iat": 1700000000
+}
+```
+
+The trust policy on the IAM role evaluates a subset of these claims — typically `sub`, `ref`,
+and `environment` — to decide whether to grant access. The `exp` field means the token is
+useless within the hour; there is nothing to rotate or revoke. To make the full exchange
+concrete, here is the sequence for AWS:
 
 ![AWS OIDC Flow](../images/github-aws-oidc-flow.drawio.png)
 
@@ -216,14 +234,14 @@ Every IaC project faces a bootstrap problem: Terraform needs infrastructure to r
 buckets, OIDC providers, IAM roles — but you need to run something to create that
 infrastructure in the first place.
 
-To solve this without creating an unmaintainable mess of shell logic, the setup is divided
-into two distinct layers: one-time foundation bootstrapping, and ongoing declarative
-permission management.
+To solve this without creating an unmaintainable mess of shell logic, the setup is divided into
+two distinct layers: one-time foundation bootstrapping, and ongoing declarative permission
+management.
 
 The foundation layer consists of three bash scripts in scripts/bootstrap/, one per cloud. A
 human with local CLI credentials runs the relevant script once to establish the core
-infrastructure. While they are completely idempotent and safe to re-run if core resources
-are ever accidentally deleted, their primary purpose is simply getting the lights on:
+infrastructure. While they are completely idempotent and safe to re-run if core resources are
+ever accidentally deleted, their primary purpose is simply getting the lights on:
 
 ```sh
 ./scripts/bootstrap/bootstrap-aws.sh   # S3 bucket + OIDC provider + 2 IAM roles (plan + apply)
@@ -239,11 +257,11 @@ declarative permissions managed strictly via plain JSON files in `scripts/iam/`.
 scripts then take these JSON files and apply them. How this works under the hood depends on the
 cloud:
 
-* * **AWS:** Natively expects JSON policy documents, so the script directly applies the file to
-  the IAM role.
-* * **GCP and Azure:** The JSON files act as a bespoke, declarative wrapper for this project.
-  The bootstrap scripts read this standardized JSON and translate it into the appropriate
-  `gcloud` or `az` CLI commands to apply IAM bindings and RBAC assignments.
+* **AWS:** Natively expects JSON policy documents, so the script directly applies the
+  file to the IAM role.
+* **GCP and Azure:** The JSON files act as a bespoke, declarative wrapper for this
+  project. The bootstrap scripts read this standardized JSON and translate it into the
+  appropriate `gcloud` or `az` CLI commands to apply IAM bindings and RBAC assignments.
 
 For example, the AWS plan role policy starts here:
 
@@ -310,7 +328,7 @@ gh workflow run plan-resource.yml \
 A passing run proves three things in one go:
 
 1. **OIDC token exchange is working** — the correct role or service account was assumed.
-2. **Remote state is accessible** — `terraform init` authenticated to the state backend.
+2. **Remote state is accessible** — `terraform init` authenticated to the state backend and obtains a lock.
 3. **Live provider data resolves** — `terraform plan` completed against real cloud APIs.
 
 | Cloud | Data sources                                         | What it confirms                           |
@@ -319,11 +337,11 @@ A passing run proves three things in one go:
 | GCP   | `google_project`, `google_client_openid_userinfo`    | Project ID/number, service account email   |
 | Azure | `azurerm_subscription`, `azurerm_client_config`      | Subscription ID/name, tenant ID, object ID |
 
-Zero resources created. Zero cost. Full confidence the foundation holds.
+All without creating any resources or incurring cost whilst establishing full confidence the zero-trust foundation is solid.
 
 ## What's Next
 
-You now have a secure, zero-trust foundation. Three clouds, three state backends, OIDC
+You now have a secure, zero-trust foundation for each of the three clouds, each with: state backends, OIDC
 federation configured end-to-end, permissions managed as reviewable JSON diffs, and a smoke
 test that proves the whole chain without touching production infrastructure. Not a single
 static credential lives in GitHub.
