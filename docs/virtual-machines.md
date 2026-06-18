@@ -255,13 +255,12 @@ terraform -chdir=azure/virtual-machine apply \
 
 ## Connecting to a VM
 
-After a successful apply, use the helper scripts in `scripts/examples/` to connect and verify the VM is healthy. Each script takes the public IP and private key path, then prints the root directory listing, hostname, and OS release before exiting.
+After a successful apply, use the helper scripts in `scripts/examples/` to connect and verify the VM is healthy. Each script looks up the public IP via the cloud CLI — no arguments needed. The SSH key defaults to `~/.ssh/vm_deploy_key` and can be overridden with `VM_KEY=/path/to/key`.
 
 ### AWS (SSH)
 
 ```sh
-IP=$(terraform -chdir=aws/virtual-machine output -raw public_ip)
-./scripts/examples/virtual-machine-aws.sh "$IP" ~/.ssh/vm_deploy_key
+./scripts/examples/virtual-machine-aws.sh
 ```
 
 <details>
@@ -306,8 +305,7 @@ PRETTY_NAME="Amazon Linux 2023.12.20260611"
 ### GCP (SSH)
 
 ```sh
-IP=$(terraform -chdir=gcp/virtual-machine output -raw public_ip)
-./scripts/examples/virtual-machine-gcp.sh "$IP" ~/.ssh/vm_deploy_key
+./scripts/examples/virtual-machine-gcp.sh
 ```
 
 <details>
@@ -352,8 +350,7 @@ PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
 ### Azure (SSH)
 
 ```sh
-IP=$(terraform -chdir=azure/virtual-machine output -raw public_ip)
-./scripts/examples/virtual-machine-azure.sh "$IP" ~/.ssh/vm_deploy_key
+./scripts/examples/virtual-machine-azure.sh
 ```
 
 <details>

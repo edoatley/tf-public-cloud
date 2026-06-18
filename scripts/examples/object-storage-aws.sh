@@ -1,11 +1,20 @@
 #!/usr/bin/env bash
 # Demonstrates upload, update, download, and delete against an S3 bucket.
-# Usage: ./scripts/object-storage-aws.sh <bucket-name>
+# Usage: ./scripts/examples/object-storage-aws.sh
+# The bucket name is looked up via the AWS CLI.
+# AWS_PROFILE defaults to 'sandbox'.
 set -euo pipefail
 export AWS_PAGER=""
+export AWS_PROFILE="${AWS_PROFILE:-sandbox}"
 
-BUCKET="${1:?Usage: $0 <bucket-name>}"
+NAME_PREFIX="tf-public-cloud-object-storage"
 KEY="demo/hello.txt"
+
+echo "==> Looking up S3 bucket name"
+BUCKET="$(aws s3api list-buckets \
+  --query "Buckets[?starts_with(Name, '${NAME_PREFIX}')].Name | [0]" \
+  --output text)"
+echo "     ${BUCKET}"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 

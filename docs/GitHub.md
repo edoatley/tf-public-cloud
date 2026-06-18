@@ -4,10 +4,10 @@
 
 Two GitHub environments gate write access to cloud infrastructure.
 
-| Environment | Purpose | Who can use it |
-|-------------|---------|----------------|
-| `default` | Plan/read-only access | Any workflow job that reads state or runs `terraform plan` |
-| `production` | Apply/write access | Workflow jobs that mutate infrastructure or push container images |
+| Environment  | Purpose               | Who can use it                                                    |
+| ------------ | --------------------- | ----------------------------------------------------------------- |
+| `default`    | Plan/read-only access | Any workflow job that reads state or runs `terraform plan`        |
+| `production` | Apply/write access    | Workflow jobs that mutate infrastructure or push container images |
 
 Environment membership controls which cloud credentials a job receives (see Variables below). It also controls the OIDC token claims that cloud providers verify — jobs without an environment declaration cannot authenticate as apply-level identities.
 
@@ -17,29 +17,29 @@ Environment membership controls which cloud credentials a job receives (see Vari
 
 ### Repo-level (available to all jobs)
 
-| Variable | Value | Purpose |
-|----------|-------|---------|
-| `AWS_REGION` | `eu-west-2` | AWS region for all resources |
-| `AWS_PLAN_ROLE_ARN` | `arn:aws:iam::793976186123:role/github-tf-public-cloud-plan` | IAM role assumed for validate/plan steps |
-| `AWS_ROLE_ARN` | `arn:aws:iam::793976186123:role/github-tf-public-cloud-apply` | IAM role assumed for apply/destroy steps |
-| `AZURE_SUBSCRIPTION_ID` | `edbc314c-...` | Azure subscription targeted by all modules |
-| `AZURE_TENANT_ID` | `f20d4ab3-...` | Azure AD tenant for OIDC federation |
-| `GCP_PROJECT_ID` | `gcp-sandbox-2026-18798` | GCP project targeted by all modules |
-| `GCP_WIF_PROVIDER` | `projects/116498173042/.../github-provider` | Workload Identity Federation provider used by both GCP service accounts |
-| `SSH_PUBLIC_KEY` | base64-encoded RSA public key | Injected as `TF_VAR_ssh_public_key_b64` for virtual-machine modules |
+| Variable                | Value                                                         | Purpose                                                                 |
+| ----------------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `AWS_REGION`            | `eu-west-2`                                                   | AWS region for all resources                                            |
+| `AWS_PLAN_ROLE_ARN`     | `arn:aws:iam::793976186123:role/github-tf-public-cloud-plan`  | IAM role assumed for validate/plan steps                                |
+| `AWS_ROLE_ARN`          | `arn:aws:iam::793976186123:role/github-tf-public-cloud-apply` | IAM role assumed for apply/destroy steps                                |
+| `AZURE_SUBSCRIPTION_ID` | `edbc314c-...`                                                | Azure subscription targeted by all modules                              |
+| `AZURE_TENANT_ID`       | `f20d4ab3-...`                                                | Azure AD tenant for OIDC federation                                     |
+| `GCP_PROJECT_ID`        | `gcp-sandbox-2026-18798`                                      | GCP project targeted by all modules                                     |
+| `GCP_WIF_PROVIDER`      | `projects/116498173042/.../github-provider`                   | Workload Identity Federation provider used by both GCP service accounts |
+| `SSH_PUBLIC_KEY`        | base64-encoded RSA public key                                 | Injected as `TF_VAR_ssh_public_key_b64` for virtual-machine modules     |
 
 ### Environment: `default` (plan / read-only)
 
-| Variable | Value | Purpose |
-|----------|-------|---------|
-| `AZURE_CLIENT_ID` | `9343b2c9-...` | App registration authorised for plan-only Azure operations |
+| Variable              | Value                        | Purpose                                                                          |
+| --------------------- | ---------------------------- | -------------------------------------------------------------------------------- |
+| `AZURE_CLIENT_ID`     | `9343b2c9-...`               | App registration authorised for plan-only Azure operations                       |
 | `GCP_SERVICE_ACCOUNT` | `github-actions-tf-plan@...` | GCP service account trusted for any repo token (no environment condition on WIF) |
 
 ### Environment: `production` (apply / write)
 
-| Variable | Value | Purpose |
-|----------|-------|---------|
-| `AZURE_CLIENT_ID` | `acc8446a-...` | App registration authorised for apply-level Azure operations |
+| Variable              | Value                         | Purpose                                                                                                     |
+| --------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `AZURE_CLIENT_ID`     | `acc8446a-...`                | App registration authorised for apply-level Azure operations                                                |
 | `GCP_SERVICE_ACCOUNT` | `github-actions-tf-apply@...` | GCP service account trusted only for tokens carrying `attribute.environment=production` on the WIF provider |
 
 ### Why AWS has no environment-level variables
@@ -83,11 +83,11 @@ Runs Terraform apply or destroy across the selected cloud(s). All jobs use `envi
 
 Builds the Docker image from `app/` and pushes it to the registry for each selected cloud:
 
-| Cloud | Registry |
-|-------|----------|
-| AWS | ECR — repository `tf-public-cloud-app` |
-| GCP | Artifact Registry — `europe-west2-docker.pkg.dev/<project>/tf-public-cloud-app` |
-| Azure | ACR — `tfpubcloudacredoatley` |
+| Cloud | Registry                                                                        |
+| ----- | ------------------------------------------------------------------------------- |
+| AWS   | ECR — repository `tf-public-cloud-app`                                          |
+| GCP   | Artifact Registry — `europe-west2-docker.pkg.dev/<project>/tf-public-cloud-app` |
+| Azure | ACR — `tfpubcloudacredoatley`                                                   |
 
 All three jobs use `environment: production` so they authenticate with write-level credentials. Must be triggered from a `release-*` ref. Run this before `apply-resource.yml` for `containerised-app` — the Terraform module references the image by tag.
 

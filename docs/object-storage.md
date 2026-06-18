@@ -165,13 +165,12 @@ For repeated local use, create a gitignored `terraform.tfvars` in the module dir
 
 ## Working with objects
 
-After deploying, use the helper scripts in `scripts/examples/` to upload, update, read back, and delete a file. Each script takes the resource name(s) from `terraform output`.
+After deploying, use the helper scripts in `scripts/examples/` to upload, update, read back, and delete a file. Each script looks up the resource name via the cloud CLI — no arguments needed.
 
 ### AWS (objects)
 
 ```sh
-BUCKET=$(terraform -chdir=aws/object-storage output -raw bucket_name)
-./scripts/examples/object-storage-aws.sh "$BUCKET"
+./scripts/examples/object-storage-aws.sh
 ```
 
 <details>
@@ -196,8 +195,7 @@ delete: s3://tf-public-cloud-object-storage-32f9/demo/hello.txt
 ### GCP (objects)
 
 ```sh
-BUCKET=$(terraform -chdir=gcp/object-storage output -raw bucket_name)
-./scripts/examples/object-storage-gcp.sh "$BUCKET"
+./scripts/examples/object-storage-gcp.sh
 ```
 
 <details>
@@ -227,9 +225,7 @@ Removing objects:
 ### Azure (objects)
 
 ```sh
-ACCOUNT=$(terraform -chdir=azure/object-storage output -raw storage_account_name)
-CONTAINER=$(terraform -chdir=azure/object-storage output -raw container_name)
-./scripts/examples/object-storage-azure.sh "$ACCOUNT" "$CONTAINER"
+./scripts/examples/object-storage-azure.sh
 ```
 
 . [!Note]
