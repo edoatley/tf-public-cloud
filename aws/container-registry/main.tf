@@ -1,5 +1,6 @@
 resource "aws_ecr_repository" "this" {
-  name                 = var.repository_name
+  name = var.repository_name
+  # MUTABLE here to allow overwriting the 'latest' tag in this demo. Use IMMUTABLE in production.
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
