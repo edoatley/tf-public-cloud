@@ -2,6 +2,8 @@ resource "aws_ecr_repository" "this" {
   name = var.repository_name
   # MUTABLE here to allow overwriting the 'latest' tag in this demo. Use IMMUTABLE in production.
   image_tag_mutability = "MUTABLE"
+  # force_delete allows terraform destroy to remove the repo even when images remain.
+  force_delete = true
 
   image_scanning_configuration {
     scan_on_push = true
