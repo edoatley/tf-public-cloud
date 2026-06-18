@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="RYU7mcqkcB14aYFkE7KG" name="Page-1">
-        <mxGraphModel dx="1296" dy="611" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0" adaptiveColors="auto">
+        <mxGraphModel dx="1317" dy="486" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="900" math="0" shadow="0" adaptiveColors="auto">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -8,120 +8,160 @@
                     <mxGeometry x="20" y="10" width="1160" height="36" as="geometry"/>
                 </mxCell>
                 <mxCell id="bg_aws" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff3e0;strokeColor=#e65100;strokeWidth=2;opacity=40;pointerEvents=0;arcSize=2;" parent="1" vertex="1">
-                    <mxGeometry x="20" y="56" width="360" height="600" as="geometry"/>
+                    <mxGeometry x="20" y="56" width="360" height="774" as="geometry"/>
                 </mxCell>
                 <mxCell id="bg_gcp" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e3f2fd;strokeColor=#1565c0;strokeWidth=2;opacity=40;pointerEvents=0;arcSize=2;" parent="1" vertex="1">
-                    <mxGeometry x="420" y="56" width="360" height="600" as="geometry"/>
+                    <mxGeometry x="420" y="56" width="360" height="774" as="geometry"/>
                 </mxCell>
                 <mxCell id="bg_azure" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e8f5e9;strokeColor=#1b5e20;strokeWidth=2;opacity=40;pointerEvents=0;arcSize=2;" parent="1" vertex="1">
-                    <mxGeometry x="820" y="56" width="360" height="600" as="geometry"/>
+                    <mxGeometry x="820" y="56" width="360" height="774" as="geometry"/>
                 </mxCell>
                 <mxCell id="lbl_aws" value="Amazon Web Services" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=13;fontStyle=1;fontColor=#e65100;" parent="1" vertex="1">
-                    <mxGeometry x="130" y="64" width="152" height="32" as="geometry"/>
+                    <mxGeometry x="130" y="64" width="200" height="32" as="geometry"/>
                 </mxCell>
                 <mxCell id="lbl_gcp" value="Google Cloud Platform" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=13;fontStyle=1;fontColor=#1565c0;" parent="1" vertex="1">
-                    <mxGeometry x="525" y="63" width="150" height="32" as="geometry"/>
+                    <mxGeometry x="525" y="63" width="200" height="32" as="geometry"/>
                 </mxCell>
                 <mxCell id="lbl_azure" value="Microsoft Azure" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=13;fontStyle=1;fontColor=#1b5e20;" parent="1" vertex="1">
-                    <mxGeometry x="944" y="63" width="112" height="32" as="geometry"/>
+                    <mxGeometry x="944" y="63" width="180" height="32" as="geometry"/>
                 </mxCell>
                 <mxCell id="gha_aws" value="GitHub Actions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#24292e;strokeColor=#24292e;fontColor=#ffffff;fontStyle=1;fontSize=11;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="112" width="240" height="44" as="geometry"/>
+                    <mxGeometry x="80" y="116" width="240" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="gha_gcp" value="GitHub Actions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#24292e;strokeColor=#24292e;fontColor=#ffffff;fontStyle=1;fontSize=11;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="480" y="112" width="240" height="44" as="geometry"/>
+                    <mxGeometry x="480" y="116" width="240" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="gha_azure" value="GitHub Actions" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#24292e;strokeColor=#24292e;fontColor=#ffffff;fontStyle=1;fontSize=11;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="880" y="112" width="240" height="44" as="geometry"/>
-                </mxCell>
-                <mxCell id="arr1_aws" value="OIDC JWT" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;align=center;fontSize=9;fontColor=#bf360c;" parent="1" source="gha_aws" target="aws_oidc" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="arr1_gcp" value="OIDC JWT" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#1565c0;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;align=center;fontSize=9;fontColor=#1565c0;" parent="1" source="gha_gcp" target="gcp_pool" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="arr1_azure" value="OIDC JWT" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2e7d32;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;align=center;fontSize=9;fontColor=#1b5e20;" parent="1" source="gha_azure" target="az_entra" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry x="880" y="116" width="240" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="aws_oidc" value="AWS IAM OIDC Provider" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e65100;strokeColor=#bf360c;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="210" width="240" height="44" as="geometry"/>
+                    <mxGeometry x="80" y="246" width="240" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="gcp_pool" value="Workload Identity Pool" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#0d47a1;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="480" y="226" width="240" height="44" as="geometry"/>
+                    <mxGeometry x="480" y="246" width="240" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="az_entra" value="Microsoft Entra ID&#xa;App Registration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2e7d32;strokeColor=#1b5e20;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="880" y="263" width="240" height="44" as="geometry"/>
+                    <mxGeometry x="880" y="246" width="240" height="44" as="geometry"/>
                 </mxCell>
-                <mxCell id="arr2_aws" value="validates JWT signature" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;align=center;fontSize=9;fontColor=#bf360c;" parent="1" source="aws_oidc" target="aws_decision" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="arr2_gcp" value="attribute mapping" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#1565c0;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;align=center;fontSize=9;fontColor=#1565c0;" parent="1" source="gcp_pool" target="gcp_wif" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="arr2_azure" value="Federated Credential check&#xa;(entity type: Environment=default)" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2e7d32;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;align=center;fontSize=9;fontColor=#1b5e20;" parent="1" source="az_entra" target="az_token" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="aws_decision" value="plan or apply?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ff8f00;strokeColor=#e65100;fontColor=#ffffff;fontStyle=1;fontSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="125" y="316" width="150" height="54" as="geometry"/>
+                <mxCell id="aws_env" value="GitHub Environment&#xa;(default / production)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff8f00;strokeColor=#e65100;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="80" y="376" width="240" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="gcp_wif" value="WIF Provider&#xa;(validates JWT, maps claims)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#0d47a1;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="480" y="339" width="240" height="44" as="geometry"/>
+                    <mxGeometry x="480" y="376" width="240" height="44" as="geometry"/>
                 </mxCell>
-                <mxCell id="az_token" value="Access Token&#xa;(scoped to subscription)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2e7d32;strokeColor=#1b5e20;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="880" y="415" width="240" height="44" as="geometry"/>
+                <mxCell id="az_env" value="GitHub Environment&#xa;(default / production)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff8f00;strokeColor=#e65100;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="880" y="376" width="240" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="gcp_env" value="GitHub Environment&#xa;(default / production)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ff8f00;strokeColor=#e65100;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="480" y="506" width="240" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="aws_plan_role" value="Plan IAM Role&#xa;(read-only)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e65100;strokeColor=#bf360c;fontColor=#ffffff;fontStyle=0;fontSize=10;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="30" y="456" width="150" height="44" as="geometry"/>
+                    <mxGeometry x="30" y="636" width="150" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="aws_apply_role" value="Apply IAM Role&#xa;(write permissions)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e65100;strokeColor=#bf360c;fontColor=#ffffff;fontStyle=0;fontSize=10;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="220" y="456" width="150" height="44" as="geometry"/>
+                    <mxGeometry x="220" y="636" width="150" height="44" as="geometry"/>
                 </mxCell>
-                <mxCell id="arr_plan" value="plan" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;align=left;fontSize=9;fontColor=#bf360c;" parent="1" source="aws_decision" target="aws_plan_role" edge="1">
-                    <mxGeometry x="0.0075" y="-35" relative="1" as="geometry">
-                        <Array as="points">
-                            <mxPoint x="105" y="343"/>
-                        </Array>
-                        <mxPoint as="offset"/>
-                    </mxGeometry>
+                <mxCell id="gcp_plan_sa" value="Plan Service Account&#xa;(read-only)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#0d47a1;fontColor=#ffffff;fontStyle=0;fontSize=10;arcSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="430" y="636" width="150" height="44" as="geometry"/>
                 </mxCell>
-                <mxCell id="arr_apply" value="apply" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;align=right;fontSize=9;fontColor=#bf360c;" parent="1" source="aws_decision" target="aws_apply_role" edge="1">
-                    <mxGeometry x="0.0075" y="45" relative="1" as="geometry">
-                        <Array as="points">
-                            <mxPoint x="295" y="343"/>
-                        </Array>
-                        <mxPoint as="offset"/>
-                    </mxGeometry>
+                <mxCell id="gcp_apply_sa" value="Apply Service Account&#xa;(write permissions)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#0d47a1;fontColor=#ffffff;fontStyle=0;fontSize=10;arcSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="620" y="636" width="150" height="44" as="geometry"/>
                 </mxCell>
-                <mxCell id="arr3_gcp" value="generateAccessToken&#xa;(impersonation)" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#1565c0;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;align=center;fontSize=9;fontColor=#1565c0;" parent="1" source="gcp_wif" target="gcp_sa" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                <mxCell id="az_plan_app" value="Plan App Registration&#xa;(Reader role)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2e7d32;strokeColor=#1b5e20;fontColor=#ffffff;fontStyle=0;fontSize=10;arcSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="830" y="636" width="150" height="44" as="geometry"/>
                 </mxCell>
-                <mxCell id="arr3_azure" value="RBAC (Contributor role)" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2e7d32;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;align=center;fontSize=9;fontColor=#1b5e20;" parent="1" source="az_token" target="az_res" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="gcp_sa" value="Service Account" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1565c0;strokeColor=#0d47a1;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="480" y="453" width="240" height="44" as="geometry"/>
-                </mxCell>
-                <mxCell id="arr_plan_creds" value="temp credentials" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;align=center;fontSize=9;fontColor=#bf360c;entryX=0.104;entryY=0.038;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="aws_plan_role" target="aws_res" edge="1">
-                    <mxGeometry relative="1" as="geometry">
-                        <Array as="points"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="arr_apply_creds" value="temp credentials" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;exitDx=0;exitDy=0;align=center;fontSize=9;fontColor=#bf360c;entryX=0.894;entryY=0.036;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="aws_apply_role" target="aws_res" edge="1">
-                    <mxGeometry relative="1" as="geometry">
-                        <mxPoint x="295" y="560" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="arr4_gcp" value="short-lived OAuth2 token" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#1565c0;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;align=center;fontSize=9;fontColor=#1565c0;" parent="1" source="gcp_sa" target="gcp_res" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                <mxCell id="az_apply_app" value="Apply App Registration&#xa;(Contributor role)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2e7d32;strokeColor=#1b5e20;fontColor=#ffffff;fontStyle=0;fontSize=10;arcSize=10;" vertex="1" parent="1">
+                    <mxGeometry x="1020" y="636" width="150" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="aws_res" value="AWS Resources&#xa;S3 · ECR · ECS · Lambda" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1b5e20;strokeColor=#1b5e20;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="80" y="566" width="240" height="44" as="geometry"/>
+                    <mxGeometry x="80" y="766" width="240" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="gcp_res" value="GCP Resources&#xa;GCS · Artifact Registry · Cloud Run" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1b5e20;strokeColor=#1b5e20;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="480" y="566" width="240" height="44" as="geometry"/>
+                    <mxGeometry x="480" y="766" width="240" height="44" as="geometry"/>
                 </mxCell>
                 <mxCell id="az_res" value="Azure Resources&#xa;Blob · ACR · Container Apps" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1b5e20;strokeColor=#1b5e20;fontColor=#ffffff;fontStyle=1;fontSize=10;arcSize=10;" parent="1" vertex="1">
-                    <mxGeometry x="880" y="566" width="240" height="44" as="geometry"/>
+                    <mxGeometry x="880" y="766" width="240" height="44" as="geometry"/>
+                </mxCell>
+                <mxCell id="arr1_aws" value="OIDC JWT" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;align=center;fontSize=9;fontColor=#bf360c;" parent="1" source="gha_aws" target="aws_oidc" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arr1_gcp" value="OIDC JWT" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#1565c0;strokeWidth=2;align=center;fontSize=9;fontColor=#1565c0;" parent="1" source="gha_gcp" target="gcp_pool" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arr1_azure" value="OIDC JWT" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2e7d32;strokeWidth=2;align=center;fontSize=9;fontColor=#1b5e20;" parent="1" source="gha_azure" target="az_entra" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arr2_aws" value="validates JWT signature" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;align=center;fontSize=9;fontColor=#bf360c;" parent="1" source="aws_oidc" target="aws_env" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arr2_gcp" value="attribute mapping" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#1565c0;strokeWidth=2;align=center;fontSize=9;fontColor=#1565c0;" parent="1" source="gcp_pool" target="gcp_wif" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arr2_azure" value="Federated Credential check" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2e7d32;strokeWidth=2;align=center;fontSize=9;fontColor=#1b5e20;" parent="1" source="az_entra" target="az_env" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arr_wif_env" value="generateAccessToken&#xa;(impersonation)" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#1565c0;strokeWidth=2;align=center;fontSize=9;fontColor=#1565c0;" edge="1" parent="1" source="gcp_wif" target="gcp_env">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="arr_aws_plan" value="default" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=left;fontSize=9;fontColor=#bf360c;" edge="1" parent="1" source="aws_env" target="aws_plan_role">
+                    <mxGeometry x="0.016" y="-8" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arr_aws_apply" value="production" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=right;fontSize=9;fontColor=#bf360c;" edge="1" parent="1" source="aws_env" target="aws_apply_role">
+                    <mxGeometry x="0.0801" y="8" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arr_gcp_plan" value="default" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#1565c0;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=left;fontSize=9;fontColor=#1565c0;" edge="1" parent="1" source="gcp_env" target="gcp_plan_sa">
+                    <mxGeometry x="0.0282" y="-13" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arr_gcp_apply" value="production" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#1565c0;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=right;fontSize=9;fontColor=#1565c0;" edge="1" parent="1" source="gcp_env" target="gcp_apply_sa">
+                    <mxGeometry x="0.1383" y="13" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arr_az_plan" value="default" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2e7d32;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=left;fontSize=9;fontColor=#1b5e20;" edge="1" parent="1" source="az_env" target="az_plan_app">
+                    <mxGeometry x="0.0162" y="-8" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arr_az_apply" value="production" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2e7d32;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=right;fontSize=9;fontColor=#1b5e20;" edge="1" parent="1" source="az_env" target="az_apply_app">
+                    <mxGeometry x="0.0803" y="8" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arr_aws_plan_res" value="temp credentials" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=center;fontSize=9;fontColor=#bf360c;" edge="1" parent="1" source="aws_plan_role" target="aws_res">
+                    <mxGeometry x="-0.0278" y="-7" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arr_aws_apply_res" value="temp credentials" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#e65100;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=center;fontSize=9;fontColor=#bf360c;" edge="1" parent="1" source="aws_apply_role" target="aws_res">
+                    <mxGeometry x="-0.0274" y="7" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arr_gcp_plan_res" value="short-lived OAuth2 token" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#1565c0;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=center;fontSize=9;fontColor=#1565c0;" edge="1" parent="1" source="gcp_plan_sa" target="gcp_res">
+                    <mxGeometry x="-0.4693" y="-7" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arr_gcp_apply_res" value="short-lived OAuth2 token" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#1565c0;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=center;fontSize=9;fontColor=#1565c0;" edge="1" parent="1" source="gcp_apply_sa" target="gcp_res">
+                    <mxGeometry x="-0.4691" y="7" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arr_az_plan_res" value="access token" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2e7d32;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=center;fontSize=9;fontColor=#1b5e20;" edge="1" parent="1" source="az_plan_app" target="az_res">
+                    <mxGeometry x="-0.0274" y="-7" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="arr_az_apply_res" value="access token" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2e7d32;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;align=center;fontSize=9;fontColor=#1b5e20;" edge="1" parent="1" source="az_apply_app" target="az_res">
+                    <mxGeometry x="-0.0271" y="7" relative="1" as="geometry">
+                        <mxPoint as="offset"/>
+                    </mxGeometry>
                 </mxCell>
             </root>
         </mxGraphModel>
