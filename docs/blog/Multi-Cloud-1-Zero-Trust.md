@@ -4,7 +4,7 @@
 
 For a long time, CI/CD relied on generating long-lived IAM users, service accounts, and service
 principals. This effectively forces teams to store sensitive secrets directly in the CI system
-or a vault. This operational overhead scales poorly, especially when you are attempting to
+or a vault — an operational overhead that scales poorly, especially when you are attempting to
 enforce least-privilege access across a multi-cloud estate.
 
 Beyond the manual, error-prone work for IAM administrators, the critical flaw in this approach
@@ -225,8 +225,9 @@ gh api --method PUT repos/edoatley/tf-public-cloud/environments/production
 
 ```
 
-The `production` environment is where you configure reviewer approval and deployment branch/tag
-restrictions such as a human approval gate that sits in front of the IAM trust condition.
+The `production` environment is where you configure reviewer approval and deployment
+branch/tag restrictions, **acting as** a human approval gate that sits in front of the
+IAM trust condition.
 
 ## The Bootstrap: Solving the Chicken-and-Egg Problem
 
@@ -341,10 +342,9 @@ All without creating any resources or incurring cost whilst establishing full co
 
 ## What's Next
 
-You now have a secure, zero-trust foundation for each of the three clouds, each with: state backends, OIDC
-federation configured end-to-end, permissions managed as reviewable JSON diffs, and a smoke
-test that proves the whole chain without touching production infrastructure. Not a single
-static credential lives in GitHub.
+You now have a secure, zero-trust foundation for all three clouds. Each features secure state backends,
+end-to-end OIDC federation, permissions managed as reviewable JSON diffs, and a smoke test that proves
+the whole chain without touching production infrastructure. Not a single static credential lives in GitHub.
 
 In Part 2, we move from plumbing to primitives — deploying real resources and comparing the
 fundamental building blocks of cloud infrastructure: object storage and virtual machines across
