@@ -18,7 +18,7 @@ is a modern standard that solves this by leveraging the underlying OAuth 2.0 pro
 identity. By adopting OIDC, we shift from managing static secrets to requesting ephemeral,
 short-lived tokens. GitHub Actions presents a token that the Cloud Service Provider (CSP)
 natively trusts, allowing the pipeline to temporarily adopt an identity with a strictly scoped
-set of permissions.
+set of permissions. ([GitHub OIDC reference](https://docs.github.com/en/actions/reference/security/oidc))
 
 This post covers the full foundation: how to bootstrap state backends and OIDC trust across
 AWS, GCP, and Azure, how to manage permissions as code-reviewable diffs, and how to prove the
@@ -72,9 +72,9 @@ never stored anywhere persistent:
 
 | Cloud | Terraform Auth Mechanism                                                              | How credentials are passed                                                       |
 | ----- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| AWS   | `aws-actions/configure-aws-credentials` assumes an IAM Role ARN                       | Sets `AWS_*` environment variables                                               |
-| GCP   | `google-github-actions/auth` exchanges the JWT via Workload Identity Federation (WIF) | Writes a `GOOGLE_APPLICATION_CREDENTIALS` file                                   |
-| Azure | `azurerm` provider reads `ARM_*` env vars with `ARM_USE_OIDC=true`                    | Set `ARM_CLIENT_ID`, `ARM_TENANT_ID`, `ARM_SUBSCRIPTION_ID`, `ARM_USE_OIDC=true` |
+| AWS   | `aws-actions/configure-aws-credentials` assumes an IAM Role ARN ([docs](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws), [Terraform S3 backend](https://developer.hashicorp.com/terraform/language/backend/s3)) | Sets `AWS_*` environment variables |
+| GCP   | `google-github-actions/auth` exchanges the JWT via Workload Identity Federation (WIF) ([docs](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-google-cloud-platform)) | Writes a `GOOGLE_APPLICATION_CREDENTIALS` file |
+| Azure | `azurerm` provider reads `ARM_*` env vars with `ARM_USE_OIDC=true` ([docs](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-azure), [Terraform azurerm backend](https://developer.hashicorp.com/terraform/language/backend/azurerm#microsoft-entra-id-with-openid-connect-workload-identity-federation)) | Set `ARM_CLIENT_ID`, `ARM_TENANT_ID`, `ARM_SUBSCRIPTION_ID`, `ARM_USE_OIDC=true` |
 
 ## Three Clouds, One Pattern — But the Details Differ
 

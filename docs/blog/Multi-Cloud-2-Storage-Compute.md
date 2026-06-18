@@ -13,23 +13,24 @@ requires understanding how these platforms behave under the hood.
 
 In this post, we will deploy the absolute minimum primitives — a single virtual machine and a
 private object storage bucket — across AWS, GCP, and Azure. **Our goal is a unified outcome,
-but the code reveals highly divergent implementations.** Note that these are deliberately
-minimal examples, not production blueprints; some choices (like instance sizes, ephemeral IPs,
-or open SSH ingress) exist purely to keep the code readable. By keeping the use case simple,
-the architectural variances between the platforms become impossible to ignore.
+but the code reveals highly divergent implementations.** We deliberately keep the use case
+minimal — this keeps platform-specific idiosyncrasies front and centre rather than buried in
+application logic. Some choices (like instance sizes, ephemeral IPs, or open SSH ingress) exist
+purely to keep the code readable and are not production recommendations.
 
 ## The Network Fabric: Implicit vs. Explicit Routing
 
 You cannot boot a virtual machine without a network. How each cloud handles that foundational
 network dictates how much boilerplate infrastructure you must manage.
 
-**AWS** demands explicit networking. To give an EC2 instance internet access, you must
-construct a Virtual Private Cloud (VPC), carve out a public subnet, deploy an Internet Gateway
-(IGW), and explicitly route traffic to it. Without that IGW, your instance is a dark box,
-regardless of whether it has a public IP. For this demo, we use `map_public_ip_on_launch =
-true` on the subnet — the simplest way to get an internet-reachable instance. The trade-off is
-that the IP is ephemeral and changes on stop/start; a production deployment would use an
-Elastic IP instead.
+**AWS** demands explicit networking. Every AWS account comes with a default VPC in each region,
+but we declare our own — the default VPC is a convenience shortcut that bypasses the discipline
+of explicit networking and should never be used in production. To give an EC2 instance internet
+access, you must construct a VPC, carve out a public subnet, deploy an Internet Gateway (IGW),
+and explicitly route traffic to it. Without that IGW, your instance is a dark box, regardless
+of whether it has a public IP. For this demo, we use `map_public_ip_on_launch = true` on the
+subnet — the simplest way to get an internet-reachable instance. The trade-off is that the IP
+is ephemeral and changes on stop/start; a production deployment would use an Elastic IP instead.
 
 ```hcl
 resource "aws_vpc" "this" {
@@ -54,14 +55,21 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.this.id
   }
 }
+
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
 ```
 
 **GCP** operates on a global VPC model with an implicit routing fabric. We create a custom-mode
-VPC (to prevent GCP from automatically creating subnets in every global region) and a regional
-subnetwork. There is no explicit "Internet Gateway" resource to manage — outbound routing is
-handled automatically by Google's network. Furthermore, instances do not get public IPs by
-default; we explicitly attach a reserved, static regional IP (`google_compute_address`) that
-survives restarts.
+VPC (`auto_create_subnetworks = false`) rather than using GCP's pre-populated default network,
+which ships with permissive inbound rules allowing SSH, RDP, and ICMP from anywhere. By
+declaring our own network we start from a clean slate and control every firewall rule
+explicitly. We also add a regional subnetwork; there is no explicit "Internet Gateway" resource
+to manage — outbound routing is handled automatically by Google's network. Furthermore,
+instances do not get public IPs by default; we explicitly attach a reserved, static regional IP
+(`google_compute_address`) that survives restarts.
 
 ```hcl
 resource "google_compute_network" "this" {
@@ -82,16 +90,18 @@ resource "google_compute_address" "this" {
 }
 ```
 
-**Azure** sits somewhere in the middle. We provision a Virtual Network (VNet) and a subnet.
-Like GCP, outbound internet access is implicit if the virtual machine's Network Interface (NIC)
-has a public IP attached. For this, we provision a `Standard` SKU static public IP, as the
-older `Basic` tier is being deprecated.
+**Azure** sits somewhere in the middle. Unlike AWS and GCP, Azure has no concept of a default
+VNet — every virtual network must be explicitly declared, so there is no pre-populated network
+to avoid. We provision a VNet and a subnet; like GCP, outbound internet access is implicit once
+the virtual machine's Network Interface (NIC) has a public IP attached. For this, we provision
+a `Standard` SKU static public IP, as the older `Basic` tier is [being deprecated](https://azure.microsoft.com/en-us/updates/upgrade-to-standard-sku-public-ip-addresses-in-azure-by-30-september-2025-basic-sku-will-be-retired/).
 
 ```hcl
 resource "azurerm_virtual_network" "this" {
-  name          = "${var.name_prefix}-vnet-${random_id.suffix.hex}"
-  address_space = [var.address_space]
-  location      = azurerm_resource_group.this.location
+  name                = "${var.name_prefix}-vnet-${random_id.suffix.hex}"
+  address_space       = [var.address_space]
+  location            = azurerm_resource_group.this.location
+  resource_group_name = azurerm_resource_group.this.name
 }
 
 resource "azurerm_public_ip" "this" {
@@ -151,6 +161,17 @@ resource "google_compute_instance" "this" {
 }
 ```
 
+All three platforms share the same default posture: inbound traffic from the internet is denied
+by default, and all outbound traffic is allowed by default. The details differ slightly — AWS
+Security Groups allow inbound from other resources sharing the same group
+([AWS docs](https://docs.aws.amazon.com/vpc/latest/userguide/default-security-group.html)),
+while Azure NSGs additionally allow inbound from the VNet address space and from the Azure Load
+Balancer ([Azure docs](https://learn.microsoft.com/en-us/azure/virtual-network/network-security-groups-overview#default-security-rules)).
+GCP custom-mode VPCs have no default allow rules at all for inbound, making them the strictest
+out of the box ([GCP docs](https://cloud.google.com/firewall/docs/firewalls)). In all three
+cases, the allow-all egress default is something production environments typically override with
+explicit deny rules to prevent data exfiltration.
+
 Furthermore, none of our Terraform modules generate SSH keys. Generating cryptographic keys in
 IaC (e.g., using the `tls_private_key` provider) inherently leaks them into the Terraform state
 file in plaintext. For this demo, we inject a pre-generated public key at runtime via a CI/CD
@@ -209,18 +230,21 @@ non-deprecated image automatically — no filter logic needed.
 resolves the most recent image for the specified publisher/offer/SKU (Canonical's Ubuntu 22.04
 LTS gen2) dynamically during deployment. One subtlety: Canonical restructured their Azure
 Marketplace offering in 2022, so the correct offer name is the non-obvious
-`0001-com-ubuntu-server-jammy` rather than anything resembling "ubuntu".
+`0001-com-ubuntu-server-jammy` rather than anything resembling "ubuntu"
+([Canonical naming change](https://ubuntu.com/blog/canonical-announces-new-ubuntu-pro-images-available-on-microsoft-azure)).
 
 ## Object Storage: Beyond the Bucket
 
 Now let's look at object storage. While the concept of a bucket is universal, securing it is
 not. In a modern enterprise, an open S3 bucket is a resume-generating event.
 
-**AWS S3** requires active effort to lock a bucket down. HTTPS enforcement is not on by default
-— we must inject a bucket policy that explicitly denies any request where `aws:SecureTransport
-= false`. Crucially, the public access block must be applied first (enforced via `depends_on`)
-to avoid a race condition where the policy attachment fails because the block is not yet
-committed:
+**AWS S3** has good defaults — public access is blocked by default on new buckets — but HTTPS
+enforcement is not. We must inject a bucket policy that explicitly denies any request where
+`aws:SecureTransport = false`. We also declare the public access block explicitly in IaC even
+though it is already on by default; this makes the security posture code-reviewable and
+prevents it from being silently disabled. Crucially, the public access block must be applied
+first (enforced via `depends_on`) to avoid a race condition where the policy attachment fails
+because the block is not yet committed:
 
 ```hcl
 resource "aws_s3_bucket_public_access_block" "this" {
@@ -274,8 +298,12 @@ resource "google_storage_bucket" "this" {
 
 **Azure Blob Storage** requires a strict three-level hierarchy: Resource Group → Storage
 Account → Blob Container. We configure the Storage Account to enforce HTTPS and TLS 1.2 as
-minimum transport, and apply a 7-day soft-delete retention policy for both blobs and containers
-as a safety net against accidental deletion:
+minimum transport. Note that `TLS1_2` is the highest value the `min_tls_version` property
+accepts — Azure Storage does support TLS 1.3, but it cannot be enforced as a floor; clients
+that support it will negotiate up automatically. We also apply a 7-day soft-delete retention policy for both blobs and containers
+as a safety net against accidental deletion. We also go a step further and deny all network
+traffic by default, allowing only internal Azure Services — meaning the storage account is not
+reachable from the public internet at all, not merely HTTPS-only:
 
 ```hcl
 resource "azurerm_storage_account" "this" {
@@ -283,8 +311,13 @@ resource "azurerm_storage_account" "this" {
   resource_group_name = azurerm_resource_group.this.name
 
   https_traffic_only_enabled      = true
-  min_tls_version                 = "TLS1_2"
+  min_tls_version                 = "TLS1_2"   # TLS 1.3 is supported but cannot be enforced as a minimum
   allow_nested_items_to_be_public = false
+
+  network_rules {
+    default_action = "Deny"
+    bypass         = ["AzureServices"]
+  }
 
   blob_properties {
     versioning_enabled = true
@@ -298,14 +331,22 @@ resource "azurerm_storage_account" "this" {
     }
   }
 }
+
+resource "azurerm_storage_container" "this" {
+  name                  = var.container_name
+  storage_account_id    = azurerm_storage_account.this.id
+  container_access_type = "private"
+}
 ```
 
 ![Object Storage Security Comparison](../images/object-storage-security-comparison.drawio.png)
 
-*AWS requires multiple explicit resources to achieve a locked-down bucket: a public access
-block, a bucket policy, and server-side encryption — none of which are on by default. GCP
-achieves equivalent security with two inline properties. Azure enforces HTTPS and TLS at the
-Storage Account tier, meaning every container it hosts inherits these controls automatically.*
+*AWS blocks public access and encrypts by default on new buckets (encryption [since January 2023](https://docs.aws.amazon.com/AmazonS3/latest/userguide/default-bucket-encryption.html)), but
+HTTPS enforcement still requires an explicit bucket policy. We also declare the public access
+block in IaC to lock it in as a code-reviewable control. GCP achieves a comparable posture with
+two inline properties. Azure enforces HTTPS, TLS 1.2 minimum (with TLS 1.3 negotiated automatically where supported),
+and network-level denial at the Storage Account tier, meaning every container it hosts inherits
+these controls automatically.*
 
 ## Seeing It Work: CLI Operations
 
