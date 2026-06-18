@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Demonstrates upload, update, download, and delete against an S3 bucket.
-# Usage: ./scripts/examples/object-storage-aws.sh
+# Usage: ./scripts/examples/object-storage/aws.sh
 # The bucket name is looked up via the AWS CLI.
 # AWS_PROFILE defaults to 'sandbox'.
 set -euo pipefail

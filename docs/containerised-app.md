@@ -340,9 +340,9 @@ gh run watch
 Use the helper scripts in `scripts/examples/` — they look up the endpoint via the cloud CLI so no `terraform output` is needed:
 
 ```sh
-./scripts/examples/containerised-app-aws.sh
-./scripts/examples/containerised-app-gcp.sh
-./scripts/examples/containerised-app-azure.sh
+./scripts/examples/containerised-app/aws.sh
+./scripts/examples/containerised-app/gcp.sh
+./scripts/examples/containerised-app/azure.sh
 ```
 
 GCP and Azure may take 30–60 seconds to respond on the very first request (cold start from zero replicas).

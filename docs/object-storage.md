@@ -170,7 +170,7 @@ After deploying, use the helper scripts in `scripts/examples/` to upload, update
 ### AWS (objects)
 
 ```sh
-./scripts/examples/object-storage-aws.sh
+./scripts/examples/object-storage/aws.sh
 ```
 
 <details>
@@ -195,7 +195,7 @@ delete: s3://tf-public-cloud-object-storage-32f9/demo/hello.txt
 ### GCP (objects)
 
 ```sh
-./scripts/examples/object-storage-gcp.sh
+./scripts/examples/object-storage/gcp.sh
 ```
 
 <details>
@@ -225,7 +225,7 @@ Removing objects:
 ### Azure (objects)
 
 ```sh
-./scripts/examples/object-storage-azure.sh
+./scripts/examples/object-storage/azure.sh
 ```
 
 . [!Note]

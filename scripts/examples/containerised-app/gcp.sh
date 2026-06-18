@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Smoke-tests the containerised app running on GCP Cloud Run.
 # Looks up the service URL via the gcloud CLI — no terraform output needed.
-# Usage: ./scripts/examples/containerised-app-gcp.sh [project-id]
+# Usage: ./scripts/examples/containerised-app/gcp.sh [project-id]
 set -euo pipefail
 
 PROJECT="${1:-$(gcloud config get-value project 2>/dev/null)}"

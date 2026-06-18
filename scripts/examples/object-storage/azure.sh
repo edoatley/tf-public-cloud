@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Demonstrates upload, update, download, and delete against an Azure Blob container.
-# Usage: ./scripts/examples/object-storage-azure.sh
+# Usage: ./scripts/examples/object-storage/azure.sh
 # The storage account name is looked up via the az CLI.
 set -euo pipefail
 

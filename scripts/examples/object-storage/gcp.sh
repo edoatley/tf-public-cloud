@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Demonstrates upload, update, download, and delete against a GCS bucket.
-# Usage: ./scripts/examples/object-storage-gcp.sh
+# Usage: ./scripts/examples/object-storage/gcp.sh
 # The bucket name is looked up via the gcloud CLI.
 set -euo pipefail
 

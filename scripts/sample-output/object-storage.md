@@ -3,7 +3,7 @@
 ## AWS (S3)
 
 ```
-$ bash scripts/examples/object-storage-aws.sh
+$ bash scripts/examples/object-storage/aws.sh
 
 ==> Looking up S3 bucket name
      tf-public-cloud-object-storage-a5ce
@@ -45,7 +45,7 @@ delete: s3://tf-public-cloud-object-storage-a5ce/demo/hello.txt
 ## GCP (Cloud Storage)
 
 ```
-$ bash scripts/examples/object-storage-gcp.sh
+$ bash scripts/examples/object-storage/gcp.sh
 
 ==> Looking up GCS bucket name
      tf-public-cloud-object-storage-8679
@@ -65,7 +65,7 @@ Removing gs://tf-public-cloud-object-storage-8679/demo/hello.txt...
 ## Azure (Blob Storage)
 
 ```
-$ bash scripts/examples/object-storage-azure.sh
+$ bash scripts/examples/object-storage/azure.sh
 
 ==> Looking up Azure storage account name
      tfpubcloudobjectstor8b92

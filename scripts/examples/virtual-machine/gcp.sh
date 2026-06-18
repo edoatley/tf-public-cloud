@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Proves SSH connectivity to a GCP Compute Engine instance by listing the root directory.
-# Usage: ./scripts/examples/virtual-machine-gcp.sh [private-key-path]
+# Usage: ./scripts/examples/virtual-machine/gcp.sh [private-key-path]
 # The instance public IP is looked up via the gcloud CLI.
 set -euo pipefail
 

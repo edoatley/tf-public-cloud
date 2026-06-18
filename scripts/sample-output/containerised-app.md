@@ -3,7 +3,7 @@
 ## AWS (ECS Fargate + ALB)
 
 ```
-$ bash scripts/examples/containerised-app-aws.sh
+$ bash scripts/examples/containerised-app/aws.sh
 
 ==> Looking up ALB DNS name
      http://tf-public-cloud-app-alb-1570170617.eu-west-2.elb.amazonaws.com
@@ -43,7 +43,7 @@ $ bash scripts/examples/containerised-app-aws.sh
 ## GCP (Cloud Run)
 
 ```
-$ bash scripts/examples/containerised-app-gcp.sh gcp-sandbox-2026-18798
+$ bash scripts/examples/containerised-app/gcp.sh gcp-sandbox-2026-18798
 
 ==> Looking up Cloud Run service URL
      https://tf-public-cloud-app-lkatnppnna-ew.a.run.app
@@ -83,7 +83,7 @@ $ bash scripts/examples/containerised-app-gcp.sh gcp-sandbox-2026-18798
 ## Azure (Container Apps)
 
 ```
-$ bash scripts/examples/containerised-app-azure.sh
+$ bash scripts/examples/containerised-app/azure.sh
 
 ==> Looking up Container App FQDN
      https://tf-public-cloud-app--6w5jnmm.redcliff-6e6eca9f.uksouth.azurecontainerapps.io

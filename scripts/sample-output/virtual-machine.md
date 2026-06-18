@@ -3,7 +3,7 @@
 ## AWS (EC2 — Amazon Linux 2023)
 
 ```
-$ bash scripts/examples/virtual-machine-aws.sh
+$ bash scripts/examples/virtual-machine/aws.sh
 
 ==> Looking up EC2 instance public IP
      18.132.41.144
@@ -42,7 +42,7 @@ PRETTY_NAME="Amazon Linux 2023.12.20260611"
 ## GCP (Compute Engine — Debian 12)
 
 ```
-$ bash scripts/examples/virtual-machine-gcp.sh
+$ bash scripts/examples/virtual-machine/gcp.sh
 
 ==> Looking up Compute Engine instance public IP
      34.39.121.78
@@ -81,7 +81,7 @@ PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
 ## Azure (Linux VM — Ubuntu 22.04)
 
 ```
-$ bash scripts/examples/virtual-machine-azure.sh
+$ bash scripts/examples/virtual-machine/azure.sh
 
 ==> Looking up Azure VM public IP
      20.234.196.174

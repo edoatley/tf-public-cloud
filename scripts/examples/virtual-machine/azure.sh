@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Proves SSH connectivity to an Azure Linux VM by listing the root directory.
-# Usage: ./scripts/examples/virtual-machine-azure.sh [private-key-path]
+# Usage: ./scripts/examples/virtual-machine/azure.sh [private-key-path]
 # The VM public IP is looked up via the az CLI.
 set -euo pipefail
 

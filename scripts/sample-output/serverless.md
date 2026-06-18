@@ -3,7 +3,7 @@
 ## AWS (Lambda)
 
 ```
-$ bash scripts/examples/serverless-aws.sh
+$ bash scripts/examples/serverless/aws.sh
 
 ==> Looking up Lambda Function URL
      https://jwudaxtsgqkyzcp6n2lqsm4orq0cmesv.lambda-url.eu-west-2.on.aws/
@@ -19,7 +19,7 @@ $ bash scripts/examples/serverless-aws.sh
 ## GCP (Cloud Functions v2)
 
 ```
-$ bash scripts/examples/serverless-gcp.sh gcp-sandbox-2026-18798
+$ bash scripts/examples/serverless/gcp.sh gcp-sandbox-2026-18798
 
 ==> Looking up Cloud Function URL
      https://tf-public-cloud-add-lkatnppnna-ew.a.run.app
@@ -35,7 +35,7 @@ $ bash scripts/examples/serverless-gcp.sh gcp-sandbox-2026-18798
 ## Azure (Azure Functions)
 
 ```
-$ bash scripts/examples/serverless-azure.sh
+$ bash scripts/examples/serverless/azure.sh
 
 ==> Looking up Function App hostname
      https://tfpubcloudfn-2679.azurewebsites.net/api/add

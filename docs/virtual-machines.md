@@ -260,7 +260,7 @@ After a successful apply, use the helper scripts in `scripts/examples/` to conne
 ### AWS (SSH)
 
 ```sh
-./scripts/examples/virtual-machine-aws.sh
+./scripts/examples/virtual-machine/aws.sh
 ```
 
 <details>
@@ -305,7 +305,7 @@ PRETTY_NAME="Amazon Linux 2023.12.20260611"
 ### GCP (SSH)
 
 ```sh
-./scripts/examples/virtual-machine-gcp.sh
+./scripts/examples/virtual-machine/gcp.sh
 ```
 
 <details>
@@ -350,7 +350,7 @@ PRETTY_NAME="Debian GNU/Linux 12 (bookworm)"
 ### Azure (SSH)
 
 ```sh
-./scripts/examples/virtual-machine-azure.sh
+./scripts/examples/virtual-machine/azure.sh
 ```
 
 <details>

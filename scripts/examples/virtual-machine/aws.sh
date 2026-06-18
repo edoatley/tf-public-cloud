@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Proves SSH connectivity to an AWS EC2 instance by listing the root directory.
-# Usage: ./scripts/examples/virtual-machine-aws.sh [private-key-path]
+# Usage: ./scripts/examples/virtual-machine/aws.sh [private-key-path]
 # The instance public IP is looked up via the AWS CLI.
 # AWS_PROFILE defaults to 'sandbox'.
 set -euo pipefail
