@@ -23,20 +23,24 @@ ingress) exist purely to keep the code readable and are not production recommend
 You cannot boot a virtual machine without a network. How each cloud handles that foundational
 network dictates how much boilerplate infrastructure you must manage.
 
-- - **AWS demands explicit networking** While AWS provides a default VPC, using it is a
+- **AWS demands explicit networking** While AWS provides a default VPC, using it is a
   convenience shortcut that bypasses explicit networking discipline and should be avoided. To
   give an EC2 instance internet access, you must construct a VPC, carve out a public subnet,
   deploy an Internet Gateway (IGW), and explicitly route traffic to it. Without that IGW, your
   instance is unreachable.
-- - **GCP operates on an implicit global routing fabric** We create a custom-mode VPC
+- **GCP operates on an implicit global routing fabric** We create a custom-mode VPC
   (`auto_create_subnetworks` = false) rather than using GCP's pre-populated default network,
   which ships with overly permissive inbound rules. Outbound internet routing is handled
   automatically by Google's network—there is no explicit gateway resource to manage. Instances
   do not get public IPs by default; we explicitly attach a reserved, static regional IP.
-- - **Azure sits somewhere in the middle** Azure has no concept of a default VNet; every
+- **Azure sits somewhere in the middle** Azure has no concept of a default VNet; every
   virtual network must be explicitly declared. Like GCP, outbound internet access is implicit
   once the virtual machine's Network Interface (NIC) has a public IP attached. We provision a
   Standard SKU static public IP, as the older Basic tier is being deprecated.
+
+To make this concrete, compare the actual IaC footprint required to establish a public-facing network boundary across the three providers:
+
+### AWS: Explicit Routing (5 Resources)
 
 ```hcl
 resource "aws_vpc" "this" {
@@ -68,14 +72,7 @@ resource "aws_route_table_association" "public" {
 }
 ```
 
-**GCP** operates on a global VPC model with an implicit routing fabric. We create a custom-mode
-VPC (`auto_create_subnetworks = false`) rather than using GCP's pre-populated default network,
-which ships with permissive inbound rules allowing SSH, RDP, and ICMP from anywhere. By
-declaring our own network we start from a clean slate and control every firewall rule
-explicitly. We also add a regional subnetwork; there is no explicit "Internet Gateway" resource
-to manage — outbound routing is handled automatically by Google's network. Furthermore,
-instances do not get public IPs by default; we explicitly attach a reserved, static regional IP
-(`google_compute_address`) that survives restarts.
+### GCP: Implicit Routing (3 Resources)
 
 ```hcl
 resource "google_compute_network" "this" {
@@ -96,12 +93,7 @@ resource "google_compute_address" "this" {
 }
 ```
 
-**Azure** sits somewhere in the middle. Unlike AWS and GCP, Azure has no concept of a default
-VNet — every virtual network must be explicitly declared, so there is no pre-populated network
-to avoid. We provision a VNet and a subnet; like GCP, outbound internet access is implicit once
-the virtual machine's Network Interface (NIC) has a public IP attached. For this, we provision
-a `Standard` SKU static public IP, as the older `Basic` tier is [being
-deprecated](https://azure.microsoft.com/en-us/updates/upgrade-to-standard-sku-public-ip-addresses-in-azure-by-30-september-2025-basic-sku-will-be-retired/).
+### Azure: Implicit Routing with Explicit IP (2 Resources)
 
 ```hcl
 resource "azurerm_virtual_network" "this" {
