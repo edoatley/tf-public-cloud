@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Smoke-tests the serverless add function running on Azure Functions.
 # Looks up the Function App hostname via the az CLI — no terraform output needed.
-# Usage: ./scripts/examples/serverless-azure.sh
+# Usage: ./scripts/examples/serverless/azure.sh
 set -euo pipefail
 
 FUNCTION_APP_PREFIX="tfpubcloudfn"

@@ -7,9 +7,9 @@ and trigger the health toggle, then use the pointers below to watch events unfol
 ```bash
 # Run the demo (SOAK_SECONDS controls baseline duration before toggle; default 30)
 # Recovery is platform-driven — the script polls until the new instance is healthy
-./scripts/demo/health-toggle-demo-aws.sh   [SOAK_SECONDS]
-./scripts/demo/health-toggle-demo-gcp.sh   [PROJECT_ID] [SOAK_SECONDS]
-./scripts/demo/health-toggle-demo-azure.sh [SOAK_SECONDS]
+./scripts/examples/health-toggle/aws.sh   [SOAK_SECONDS]
+./scripts/examples/health-toggle/gcp.sh   [PROJECT_ID] [SOAK_SECONDS]
+./scripts/examples/health-toggle/azure.sh [SOAK_SECONDS]
 ```
 
 ## AWS
@@ -291,7 +291,7 @@ healthy. The script polls until 3 consecutive 200s confirm the replacement is se
 <summary>Full output — toggle at 12:10:37, recovery confirmed at 206s</summary>
 
 ```terminaloutput
-➜  tf-public-cloud git:(health-toggle) ✗ ./scripts/demo/health-toggle-demo-aws.sh 30                     
+➜  tf-public-cloud git:(health-toggle) ✗ ./scripts/examples/health-toggle/aws.sh 30                     
 ==> Looking up ALB DNS name
     http://tf-public-cloud-app-alb-1324468076.eu-west-2.elb.amazonaws.com
 

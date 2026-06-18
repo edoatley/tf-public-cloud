@@ -1,17 +1,16 @@
 #!/usr/bin/env bash
-# Smoke-tests the containerised app running on Azure Container Apps.
-# Looks up the app FQDN via the az CLI — no terraform output needed.
-# Usage: ./scripts/examples/containerised-app-azure.sh
+# Smoke-tests the containerised app running on AWS ECS Fargate via the ALB.
+# Looks up the ALB DNS name via the AWS CLI — no terraform output needed.
+# Usage: ./scripts/examples/containerised-app/aws.sh
 set -euo pipefail
+export AWS_PAGER=""
+export AWS_PROFILE="${AWS_PROFILE:-sandbox}"
 
-echo "==> Looking up Container App FQDN"
-BASE_URL="https://$(az containerapp show \
-  --name "tf-public-cloud-app" \
-  --query "properties.latestRevisionFqdn" \
-  --output tsv \
-  --resource-group "$(az containerapp list \
-    --query "[?name=='tf-public-cloud-app'].resourceGroup | [0]" \
-    --output tsv)")"
+echo "==> Looking up ALB DNS name"
+BASE_URL="http://$(aws elbv2 describe-load-balancers \
+  --names "tf-public-cloud-app-alb" \
+  --query 'LoadBalancers[0].DNSName' \
+  --output text)"
 echo "     ${BASE_URL}"
 
 echo "==> GET /api/items"

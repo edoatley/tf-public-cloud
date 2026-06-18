@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 # Demonstrates upload, update, download, and delete against a GCS bucket.
-# Usage: ./scripts/object-storage-gcp.sh <bucket-name>
+# Usage: ./scripts/examples/object-storage/gcp.sh
+# The bucket name is looked up via the gcloud CLI.
 set -euo pipefail
 
-BUCKET="${1:?Usage: $0 <bucket-name>}"
+NAME_PREFIX="tf-public-cloud-object-storage"
 KEY="demo/hello.txt"
+
+echo "==> Looking up GCS bucket name"
+BUCKET="$(gcloud storage buckets list --format='value(name)' \
+  | grep "^${NAME_PREFIX}" | head -1)"
+echo "     ${BUCKET}"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 

@@ -3,7 +3,7 @@
 # Liveness probe period ~10s — replica is restarted on probe failure.
 # Expect recovery in ~60-90s.
 #
-# Usage: ./scripts/demo/health-toggle-demo-azure.sh [SOAK_SECONDS]
+# Usage: ./scripts/examples/health-toggle/azure.sh [SOAK_SECONDS]
 #   SOAK_SECONDS — baseline traffic before toggling DOWN (default 30)
 #
 # Requires: az CLI, curl, jq
@@ -11,8 +11,8 @@
 SOAK="${1:-30}"
 POLL_TIMEOUT=180
 
-# shellcheck source=demo-lib.sh
-source "$(dirname "$0")/demo-lib.sh"
+# shellcheck source=lib.sh
+source "$(dirname "$0")/lib.sh"
 
 discover_url() {
   echo "${BLD}==> Looking up Container App FQDN${RST}"

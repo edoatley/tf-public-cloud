@@ -126,7 +126,7 @@ In all cases the function reads `a` and `b` from query parameters, converts them
 **Test:**
 
 ```sh
-./scripts/examples/serverless-aws.sh
+./scripts/examples/serverless/aws.sh
 ```
 
 ## GCP — Cloud Functions v2
@@ -156,7 +156,7 @@ In all cases the function reads `a` and `b` from query parameters, converts them
 **Test:**
 
 ```sh
-./scripts/examples/serverless-gcp.sh gcp-sandbox-2026-18798
+./scripts/examples/serverless/gcp.sh gcp-sandbox-2026-18798
 ```
 
 ## Azure — Azure Functions (Consumption)
@@ -191,7 +191,7 @@ In all cases the function reads `a` and `b` from query parameters, converts them
 **Test:**
 
 ```sh
-./scripts/examples/serverless-azure.sh
+./scripts/examples/serverless/azure.sh
 ```
 
 > **Note:** The first invocation after a period of inactivity may take up to 30 seconds on the Consumption plan. The test script uses `--max-time 60` on all requests to accommodate this.
@@ -251,9 +251,9 @@ gh run watch
 Use the helper scripts in `scripts/examples/` — they look up the endpoint via the cloud CLI so no `terraform output` is needed:
 
 ```sh
-./scripts/examples/serverless-aws.sh
-./scripts/examples/serverless-gcp.sh gcp-sandbox-2026-18798
-./scripts/examples/serverless-azure.sh
+./scripts/examples/serverless/aws.sh
+./scripts/examples/serverless/gcp.sh gcp-sandbox-2026-18798
+./scripts/examples/serverless/azure.sh
 ```
 
 Expected output for each cloud:

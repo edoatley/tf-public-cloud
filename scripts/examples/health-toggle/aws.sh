@@ -3,7 +3,7 @@
 # ECS health check: interval=30s, retries=3 → ~90s to declare unhealthy.
 # New task start + ALB registration adds ~60s → expect recovery in ~150-180s.
 #
-# Usage: ./scripts/demo/health-toggle-demo-aws.sh [SOAK_SECONDS]
+# Usage: ./scripts/examples/health-toggle/aws.sh [SOAK_SECONDS]
 #   SOAK_SECONDS — baseline traffic before toggling DOWN (default 30)
 #
 # Requires: aws CLI, curl, jq
@@ -13,8 +13,8 @@ export AWS_PROFILE="${AWS_PROFILE:-sandbox}"
 SOAK="${1:-30}"
 POLL_TIMEOUT=300
 
-# shellcheck source=demo-lib.sh
-source "$(dirname "$0")/demo-lib.sh"
+# shellcheck source=lib.sh
+source "$(dirname "$0")/lib.sh"
 
 discover_url() {
   echo "${BLD}==> Looking up ALB DNS name${RST}"

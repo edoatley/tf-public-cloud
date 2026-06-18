@@ -3,7 +3,7 @@
 # Liveness probe period=10s — a single failed probe triggers an immediate container restart.
 # Expect recovery in ~30-60s.
 #
-# Usage: ./scripts/demo/health-toggle-demo-gcp.sh [PROJECT_ID] [SOAK_SECONDS]
+# Usage: ./scripts/examples/health-toggle/gcp.sh [PROJECT_ID] [SOAK_SECONDS]
 #   PROJECT_ID   — GCP project (default: gcloud config get-value project)
 #   SOAK_SECONDS — baseline traffic before toggling DOWN (default 30)
 #
@@ -14,8 +14,8 @@ PROJECT="${1:-$(gcloud config get-value project 2>/dev/null)}"
 SOAK="${2:-30}"
 POLL_TIMEOUT=180
 
-# shellcheck source=demo-lib.sh
-source "$(dirname "$0")/demo-lib.sh"
+# shellcheck source=lib.sh
+source "$(dirname "$0")/lib.sh"
 
 discover_url() {
   echo "${BLD}==> Looking up Cloud Run service URL${RST}"

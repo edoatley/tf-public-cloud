@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
-# Smoke-tests the serverless add function running on AWS Lambda via a Function URL.
-# Looks up the Function URL via the AWS CLI — no terraform output needed.
-# Usage: ./scripts/examples/serverless-aws.sh
+# Smoke-tests the serverless add function running on GCP Cloud Functions v2.
+# Looks up the function URL via the gcloud CLI — no terraform output needed.
+# Usage: ./scripts/examples/serverless/gcp.sh [project-id]
 set -euo pipefail
-export AWS_PAGER=""
-export AWS_PROFILE="${AWS_PROFILE:-sandbox}"
+
+PROJECT="${1:-$(gcloud config get-value project 2>/dev/null)}"
+: "${PROJECT:?Pass a project ID or set a default with: gcloud config set project PROJECT_ID}"
 
 FUNCTION_NAME="tf-public-cloud-add"
+REGION="europe-west1"
 
-echo "==> Looking up Lambda Function URL"
-BASE_URL="$(aws lambda get-function-url-config \
-  --function-name "${FUNCTION_NAME}" \
-  --query 'FunctionUrl' \
-  --output text)"
+echo "==> Looking up Cloud Function URL"
+BASE_URL="$(gcloud functions describe "${FUNCTION_NAME}" \
+  --region "${REGION}" \
+  --project "${PROJECT}" \
+  --format 'value(serviceConfig.uri)')"
 echo "     ${BASE_URL}"
 
 echo "==> GET ?a=3&b=5 (expect 8)"
