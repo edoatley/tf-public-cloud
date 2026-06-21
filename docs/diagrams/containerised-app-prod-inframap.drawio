@@ -1,0 +1,64 @@
+<mxfile host="65bd71144e">
+    <diagram id="MUsuUHeCA6WnwdsRHMVG" name="Page-1">
+        <mxGraphModel dx="1138" dy="475" grid="0" gridSize="10" guides="0" tooltips="1" connect="0" arrows="0" fold="0" page="0" pageScale="1" pageWidth="1169" pageHeight="827" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="title" value="inframap — containerised-app-prod (HCL)" style="text;fontStyle=1;fontSize=15;align=center;fontColor=#333333;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="20" width="700" height="30" as="geometry"/>
+                </mxCell>
+                <mxCell id="in_http" value="Internet&#xa;tcp/80" style="shape=cloud;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="200" width="130" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="in_https" value="Internet&#xa;tcp/443" style="shape=cloud;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="340" width="130" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="alb" value="aws_lb.this&#xa;Application Load Balancer" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.application_load_balancer;fillColor=#8C4FFF;strokeColor=#6B37BF;fontSize=10;labelBackgroundColor=none;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="315" y="238" width="60" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ecs_service" value="aws_ecs_service.this&#xa;ECS Service" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.ecs;fillColor=#FF9900;strokeColor=#CC7700;fontSize=10;labelBackgroundColor=none;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="484" y="238" width="60" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="ecs_cluster" value="aws_ecs_cluster.this&#xa;ECS Cluster" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.ecs;fillColor=#FF9900;strokeColor=#CC7700;fontSize=10;labelBackgroundColor=none;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="683" y="238" width="60" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="nat_gw" value="aws_nat_gateway.this&#xa;NAT Gateway" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.nat_gateway;fillColor=#8C4FFF;strokeColor=#6B37BF;fontSize=10;labelBackgroundColor=none;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="490" y="440" width="60" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="eip" value="aws_eip.nat&#xa;Elastic IP" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.elastic_ip_address;fillColor=#ED7100;strokeColor=#CC5500;fontSize=10;labelBackgroundColor=none;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="710" y="440" width="60" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="igw" value="aws_internet_gateway.this&#xa;Internet Gateway" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.internet_gateway;fillColor=#8C4FFF;strokeColor=#6B37BF;fontSize=10;labelBackgroundColor=none;labelPosition=center;verticalLabelPosition=bottom;verticalAlign=top;" parent="1" vertex="1">
+                    <mxGeometry x="710" y="600" width="60" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_http_alb" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6c8ebf;strokeWidth=2;" parent="1" source="in_http" target="alb" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_https_alb" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#6c8ebf;strokeWidth=2;" parent="1" source="in_https" target="alb" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="267" y="297" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="268" y="380"/>
+                            <mxPoint x="268" y="280"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="e_alb_svc" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#FF9900;strokeWidth=2;" parent="1" source="alb" target="ecs_service" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_svc_cluster" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#FF9900;strokeWidth=2;" parent="1" source="ecs_service" target="ecs_cluster" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_nat_eip" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#9673a6;strokeWidth=1;dashed=1;" parent="1" source="nat_gw" target="eip" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e_nat_igw" style="edgeStyle=orthogonalEdgeStyle;strokeColor=#9673a6;strokeWidth=1;dashed=1;" parent="1" source="nat_gw" target="igw" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="note" value="Generated from: inframap generate --hcl aws/containerised-app-prod/" style="text;fontStyle=2;fontSize=10;fontColor=#666666;align=left;" parent="1" vertex="1">
+                    <mxGeometry x="40" y="720" width="600" height="20" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

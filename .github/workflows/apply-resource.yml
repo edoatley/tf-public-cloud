@@ -12,6 +12,7 @@ on:
           - virtual-machine
           - container-registry
           - containerised-app
+          - containerised-app-prod
           - serverless
       cloud:
         description: "Cloud to target"
