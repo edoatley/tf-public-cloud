@@ -1,0 +1,74 @@
+name: Deploy App to ECS
+
+on:
+  push:
+    branches: [main]
+    paths: ["app/**"]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag override (defaults to commit SHA)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    name: "Build, push, and deploy to ECS Fargate"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Authenticate to AWS
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Get ECR repository URL
+        id: ecr
+        run: |
+          REPO_URL=$(aws ecr describe-repositories \
+            --repository-names tf-public-cloud-app \
+            --region "${{ vars.AWS_REGION }}" \
+            --query 'repositories[0].repositoryUri' \
+            --output text)
+          IMAGE_TAG="${{ inputs.image_tag }}"
+          echo "repo_url=${REPO_URL}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${IMAGE_TAG:-${{ github.sha }}}" >> "$GITHUB_OUTPUT"
+
+      - name: Docker login to ECR
+        run: |
+          aws ecr get-login-password --region "${{ vars.AWS_REGION }}" \
+            | docker login --username AWS --password-stdin "${{ steps.ecr.outputs.repo_url }}"
+
+      - name: Build and push
+        working-directory: app
+        run: |
+          IMAGE="${{ steps.ecr.outputs.repo_url }}:${{ steps.ecr.outputs.image_tag }}"
+          docker build -t "${IMAGE}" .
+          docker push "${IMAGE}"
+          docker tag "${IMAGE}" "${{ steps.ecr.outputs.repo_url }}:latest"
+          docker push "${{ steps.ecr.outputs.repo_url }}:latest"
+
+      - name: Force ECS rolling deploy
+        run: |
+          aws ecs update-service \
+            --cluster tf-public-cloud-app-prod \
+            --service tf-public-cloud-app-prod \
+            --force-new-deployment \
+            --region "${{ vars.AWS_REGION }}"
+
+      - name: Wait for service stability
+        run: |
+          aws ecs wait services-stable \
+            --cluster tf-public-cloud-app-prod \
+            --services tf-public-cloud-app-prod \
+            --region "${{ vars.AWS_REGION }}"
