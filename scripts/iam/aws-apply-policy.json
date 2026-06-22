@@ -76,6 +76,7 @@
         "ec2:DescribeInternetGateways",
         "ec2:DescribeNetworkInterfaces",
         "ec2:DescribeAddresses",
+        "ec2:DescribeAddressesAttribute",
         "ec2:DescribeVolumes",
         "ec2:DescribeVpcClassicLink",
         "ec2:DescribeVpcClassicLinkDnsSupport",
@@ -319,6 +320,91 @@
         "cloudwatch:ListTagsForResource"
       ],
       "Resource": "*"
-    }
+    },
+    {
+      "Sid": "CloudWatchDashboardManage",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:PutDashboard",
+        "cloudwatch:DeleteDashboards",
+        "cloudwatch:GetDashboard",
+        "cloudwatch:ListDashboards"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ApplicationAutoScalingECS",
+      "Effect": "Allow",
+      "Action": [
+        "application-autoscaling:RegisterScalableTarget",
+        "application-autoscaling:DeregisterScalableTarget",
+        "application-autoscaling:DescribeScalableTargets",
+        "application-autoscaling:PutScalingPolicy",
+        "application-autoscaling:DeleteScalingPolicy",
+        "application-autoscaling:DescribeScalingPolicies",
+        "application-autoscaling:DescribeScalingActivities",
+        "application-autoscaling:TagResource",
+        "application-autoscaling:UntagResource",
+        "application-autoscaling:ListTagsForResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ACMManage",
+      "Effect": "Allow",
+      "Action": [
+        "acm:RequestCertificate",
+        "acm:DeleteCertificate",
+        "acm:DescribeCertificate",
+        "acm:ListCertificates",
+        "acm:ListTagsForCertificate",
+        "acm:AddTagsToCertificate",
+        "acm:RemoveTagsFromCertificate"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2NATGatewayManage",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:CreateNatGateway",
+        "ec2:DeleteNatGateway",
+        "ec2:DescribeNatGateways"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ECSWaitStable",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:DescribeTaskSets",
+        "ecs:ListTasks",
+        "ecs:DescribeTasks"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "IAMServiceLinkedRoleAutoScaling",
+      "Effect": "Allow",
+      "Action": "iam:CreateServiceLinkedRole",
+      "Resource": "arn:aws:iam::*:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService",
+      "Condition": {
+        "StringLike": {
+          "iam:AWSServiceName": "ecs.application-autoscaling.amazonaws.com"
+        }
+      }
+    },
+    {
+      "Sid": "Route53CertValidation",
+      "Effect": "Allow",
+      "Action": [
+        "route53:ChangeResourceRecordSets",
+        "route53:GetChange",
+        "route53:GetHostedZone",
+        "route53:ListHostedZones",
+        "route53:ListResourceRecordSets"
+      ],
+      "Resource": "*"
+    } 
   ]
 }

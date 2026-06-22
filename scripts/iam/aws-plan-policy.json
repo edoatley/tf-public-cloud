@@ -61,6 +61,7 @@
         "ec2:DescribeInternetGateways",
         "ec2:DescribeNetworkInterfaces",
         "ec2:DescribeAddresses",
+        "ec2:DescribeAddressesAttribute",
         "ec2:DescribeVolumes",
         "ec2:DescribeVpcClassicLink",
         "ec2:DescribeVpcClassicLinkDnsSupport",
@@ -162,6 +163,65 @@
         "logs:DescribeLogGroups",
         "logs:ListTagsLogGroup",
         "logs:ListTagsForResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchDashboardRead",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:GetDashboard",
+        "cloudwatch:ListDashboards"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchAlarmsRead",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:DescribeAlarms",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics",
+        "cloudwatch:ListTagsForResource"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ApplicationAutoScalingRead",
+      "Effect": "Allow",
+      "Action": [
+        "application-autoscaling:DescribeScalableTargets",
+        "application-autoscaling:DescribeScalingPolicies",
+        "application-autoscaling:DescribeScalingActivities"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "ACMRead",
+      "Effect": "Allow",
+      "Action": [
+        "acm:DescribeCertificate",
+        "acm:ListCertificates",
+        "acm:ListTagsForCertificate"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "EC2NATGatewayRead",
+      "Effect": "Allow",
+      "Action": [
+        "ec2:DescribeNatGateways"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "Route53Read",
+      "Effect": "Allow",
+      "Action": [
+        "route53:GetChange",
+        "route53:GetHostedZone",
+        "route53:ListHostedZones",
+        "route53:ListResourceRecordSets"
       ],
       "Resource": "*"
     }

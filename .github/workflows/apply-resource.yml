@@ -12,6 +12,7 @@ on:
           - virtual-machine
           - container-registry
           - containerised-app
+          - containerised-app-prod
           - serverless
       cloud:
         description: "Cloud to target"
@@ -30,6 +31,11 @@ on:
         options:
           - apply
           - destroy
+      image_tag:
+        description: "Docker image tag to deploy (required for containerised-app-prod apply)"
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -65,6 +71,7 @@ jobs:
         with:
           module_path: aws/${{ inputs.resource_type }}
           action: ${{ inputs.action }}
+          extra_vars: ${{ inputs.image_tag != '' && format('-var="image_tag={0}"', inputs.image_tag) || '' }}
 
   # ---------------------------------------------------------------------------
   # gcp — write service account, production environment gate
