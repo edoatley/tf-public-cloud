@@ -215,6 +215,9 @@ resource "aws_ecs_task_definition" "this" {
       containerPort = 8080
       protocol      = "tcp"
     }]
+    environment = [
+      { name = "RESPONSE_DELAY_MS", value = tostring(var.response_delay_ms) }
+    ]
     healthCheck = {
       command     = ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
       interval    = 30

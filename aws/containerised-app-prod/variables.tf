@@ -88,6 +88,12 @@ variable "route53_zone_id" {
   default     = "Z08071841XW6QGVOS5UD9"
 }
 
+variable "response_delay_ms" {
+  description = "Artificial delay in milliseconds added to GET /api/items responses. 0 disables the delay."
+  type        = number
+  default     = 200
+}
+
 variable "tags" {
   description = "Tags applied to all resources via provider default_tags."
   type        = map(string)

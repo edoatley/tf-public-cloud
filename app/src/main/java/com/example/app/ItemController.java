@@ -1,5 +1,6 @@
 package com.example.app;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,8 +19,12 @@ public class ItemController {
         new Item(3, "Doohickey", "A thing whose name you can't recall")
     );
 
+    @Value("${RESPONSE_DELAY_MS:0}")
+    private long responseDelayMs;
+
     @GetMapping
-    public List<Item> list() {
+    public List<Item> list() throws InterruptedException {
+        if (responseDelayMs > 0) Thread.sleep(responseDelayMs);
         return ITEMS;
     }
 
