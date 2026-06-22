@@ -144,14 +144,16 @@ aws route53 change-resource-record-sets \
 
 ## Step 2 — Apply the container registry
 
-If the ECR repository does not already exist:
+If the ECR repository does not already exist, create a `release-*` tag and dispatch against it (the `production` environment only permits `release-*` refs):
 
 ```bash
+git tag release-1.0.0
+git push origin release-1.0.0
 gh workflow run apply-resource.yml \
   --field resource_type=container-registry \
   --field cloud=aws \
   --field action=apply \
-  --ref fargate
+  --ref release-1.0.0
 gh run watch
 ```
 
@@ -164,7 +166,7 @@ gh workflow run apply-resource.yml \
   --field resource_type=containerised-app-prod \
   --field cloud=aws \
   --field action=apply \
-  --ref fargate
+  --ref release-1.0.0
 gh run watch
 ```
 
@@ -183,8 +185,12 @@ dig fargate-test.edoatley.co.uk A +short
 
 ## Step 4 — Build and deploy the app
 
+The GitHub `production` environment only permits deployments from refs matching `release-*`. Create a tag from the `fargate` branch and push it, then dispatch the workflow against that tag:
+
 ```bash
-gh workflow run deploy-app.yml --ref fargate
+git tag release-1.0.0
+git push origin release-1.0.0
+gh workflow run deploy-app.yml --ref release-1.0.0
 gh run watch
 ```
 
@@ -294,7 +300,7 @@ gh workflow run apply-resource.yml \
   --field resource_type=containerised-app-prod \
   --field cloud=aws \
   --field action=destroy \
-  --ref fargate
+  --ref release-1.0.0
 gh run watch
 ```
 
@@ -309,7 +315,7 @@ gh workflow run apply-resource.yml \
   --field resource_type=container-registry \
   --field cloud=aws \
   --field action=destroy \
-  --ref fargate
+  --ref release-1.0.0
 gh run watch
 ```
 
