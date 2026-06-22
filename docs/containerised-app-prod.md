@@ -230,17 +230,18 @@ chmod +x scripts/examples/containerised-app-prod/aws.sh
 ./scripts/examples/containerised-app-prod/aws.sh
 ```
 
-The script:
+The script runs 7 checks:
 
 1. Looks up the ALB DNS name via AWS CLI (`--profile sandbox`)
-2. Validates the health endpoint
-3. Runs a quick items API smoke test
-4. Drives 5 TPS for 30 seconds across `GET /api/items`
-5. Forces a 404 via an unknown item ID
-6. Toggles health DOWN, waits for the ALB to detect unhealthy targets (expect 503), then restores health
-7. Tails the last 5 minutes of CloudWatch logs
-8. Prints the ECS service running/desired/pending counts
-9. Prints a pass/fail summary
+2. Validates the health endpoint returns `UP`
+3. Items API smoke test — list all items, fetch by ID
+4. Load test — 5 TPS for 30 seconds, all requests must return 200
+5. Force a 404 via an unknown item ID
+6. AZ failover + autoscaling:
+   - Stops one task (`aws ecs stop-task`), confirms traffic still flows from the surviving AZ
+   - Drives 10 concurrent workers for 180s, polls ECS running count and CloudWatch CPU every 20s
+   - Passes once ECS scales out beyond the initial count (cpu_scale_target=5%)
+7. Tails the last 10 minutes of CloudWatch access logs (timestamped per-request lines including response time in ms)
 
 Options:
 
