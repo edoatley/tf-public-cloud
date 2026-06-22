@@ -174,8 +174,8 @@ echo "  Surviving task AZ: ${TASK_AZ}"
 # ── 6b. Drive load to trigger autoscaling ────────────────────────────────────
 echo ""
 echo "--- 6b. Driving load to trigger autoscale (cpu_scale_target=20%) ---"
-echo "  Sending sustained load for 90s (monitoring CPU every 15s)..."
-LOAD_END=$((SECONDS + 90))
+echo "  Sending sustained load for 180s (monitoring CPU every 20s)..."
+LOAD_END=$((SECONDS + 180))
 LOAD_PIDS=()
 
 # Launch 10 background curl workers to saturate the single task
@@ -189,7 +189,7 @@ done
 # Poll ECS running count and autoscaling activity every 15s while load runs
 SCALED=false
 while [[ $SECONDS -lt $LOAD_END ]]; do
-  sleep 15
+  sleep 20
   RUNNING=$(aws ecs describe-services \
     --cluster "${CLUSTER}" --services "${SERVICE}" \
     --region "${REGION}" --profile "${PROFILE}" \
