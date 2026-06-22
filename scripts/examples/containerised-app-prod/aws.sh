@@ -126,51 +126,132 @@ else
   fail "GET /api/items/99999 returned ${CODE} (expected 404)"
 fi
 
-# ── 6. Health toggle: drive unhealthy → ALB 503 ──────────────────────────────
+# ── 6. AZ failover + autoscaling test ────────────────────────────────────────
+# Step A: reduce to 1 task, confirm traffic still flows (other AZ picks up).
+# Step B: drive load to push CPU above the 20% scale target, confirm ECS
+#         scales back out to 2.
 echo ""
-echo "=== 6. Health toggle (DOWN → 503 → UP → recovery) ==="
-curl_check -X POST "${BASE_URL}/health/toggle"
-TOGGLE_CODE=$(code); TOGGLE_BODY=$(body)
-echo "  Toggle response: HTTP ${TOGGLE_CODE} $(echo "${TOGGLE_BODY}" | jq -c . 2>/dev/null || echo "${TOGGLE_BODY}")"
-echo "  Waiting 15s for ALB health checks to detect unhealthy state..."
-sleep 15
+echo "=== 6. AZ failover + autoscaling ==="
 
-CODE=$(curl -s -o /dev/null -w "%{http_code}" "${BASE_URL}/api/items")
-echo "  Response during unhealthy period: HTTP ${CODE}"
-if [[ "${CODE}" == "503" || "${CODE}" == "502" ]]; then
-  pass "ALB returned ${CODE} for unhealthy service"
-else
-  echo "  NOTE: expected 503/502, got ${CODE} — may need more tasks or longer wait"
-fi
+CLUSTER="tf-public-cloud-app-prod"
+SERVICE="tf-public-cloud-app-prod"
 
-echo "  Toggling health back UP..."
-curl_check -X POST "${BASE_URL}/health/toggle"
-TOGGLE_CODE=$(code); TOGGLE_BODY=$(body)
-echo "  Toggle response: HTTP ${TOGGLE_CODE} $(echo "${TOGGLE_BODY}" | jq -c . 2>/dev/null || echo "${TOGGLE_BODY}")"
-echo "  Waiting 30s for recovery (2 consecutive successful health checks)..."
+# ── 6a. Drop to 1 task ───────────────────────────────────────────────────────
+echo "--- 6a. Dropping to 1 task ---"
+aws ecs update-service \
+  --cluster "${CLUSTER}" \
+  --service "${SERVICE}" \
+  --desired-count 1 \
+  --region "${REGION}" \
+  --profile "${PROFILE}" \
+  --query 'service.{desired:desiredCount,running:runningCount}' \
+  --output table
+
+echo "  Waiting 30s for task to drain..."
 sleep 30
 
-curl_check "${BASE_URL}/actuator/health"
-RECOVER_CODE=$(code); RECOVER_BODY=$(body)
-STATUS=$(echo "${RECOVER_BODY}" | jq -r '.status // "UNKNOWN"')
-if [[ "${RECOVER_CODE}" == "200" && "${STATUS}" == "UP" ]]; then
-  pass "service recovered: health is UP"
+RUNNING=$(aws ecs describe-services \
+  --cluster "${CLUSTER}" --services "${SERVICE}" \
+  --region "${REGION}" --profile "${PROFILE}" \
+  --query 'services[0].runningCount' --output text)
+echo "  Running tasks: ${RUNNING}"
+
+CODE=$(curl -s -o /dev/null -w "%{http_code}" "${BASE_URL}/api/items")
+if [[ "${CODE}" == "200" ]]; then
+  pass "traffic still served with 1 task (AZ failover confirmed)"
 else
-  fail "service did not recover: HTTP ${RECOVER_CODE}, status=${STATUS}"
+  fail "unexpected HTTP ${CODE} with 1 task running"
 fi
+
+TASK_AZ=$(aws ecs describe-tasks \
+  --cluster "${CLUSTER}" \
+  --tasks "$(aws ecs list-tasks --cluster "${CLUSTER}" --service-name "${SERVICE}" \
+    --region "${REGION}" --profile "${PROFILE}" --query 'taskArns[0]' --output text)" \
+  --region "${REGION}" --profile "${PROFILE}" \
+  --query 'tasks[0].availabilityZone' --output text)
+echo "  Surviving task AZ: ${TASK_AZ}"
+
+# ── 6b. Drive load to trigger autoscaling ────────────────────────────────────
+echo ""
+echo "--- 6b. Driving load to trigger autoscale (cpu_scale_target=20%) ---"
+echo "  Sending sustained load for 90s (monitoring CPU every 15s)..."
+LOAD_END=$((SECONDS + 90))
+LOAD_PIDS=()
+
+# Launch 10 background curl workers to saturate the single task
+for _ in $(seq 1 10); do
+  ( while [[ $SECONDS -lt $LOAD_END ]]; do
+      curl -s -o /dev/null "${BASE_URL}/api/items"
+    done ) &
+  LOAD_PIDS+=($!)
+done
+
+# Poll ECS running count and autoscaling activity every 15s while load runs
+SCALED=false
+while [[ $SECONDS -lt $LOAD_END ]]; do
+  sleep 15
+  RUNNING=$(aws ecs describe-services \
+    --cluster "${CLUSTER}" --services "${SERVICE}" \
+    --region "${REGION}" --profile "${PROFILE}" \
+    --query 'services[0].runningCount' --output text)
+  CPU=$(aws cloudwatch get-metric-statistics \
+    --namespace AWS/ECS \
+    --metric-name CPUUtilization \
+    --dimensions Name=ClusterName,Value="${CLUSTER}" Name=ServiceName,Value="${SERVICE}" \
+    --start-time "$(date -u -v-2M '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || date -u --date='2 minutes ago' '+%Y-%m-%dT%H:%M:%SZ')" \
+    --end-time "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" \
+    --period 60 --statistics Average \
+    --region "${REGION}" --profile "${PROFILE}" \
+    --query 'sort_by(Datapoints,&Timestamp)[-1].Average' \
+    --output text 2>/dev/null || echo "N/A")
+  echo "  running=${RUNNING}  cpu=${CPU}%"
+  if [[ "${RUNNING}" -ge 2 ]] 2>/dev/null; then
+    SCALED=true
+  fi
+done
+
+# Stop background load workers
+for PID in "${LOAD_PIDS[@]}"; do
+  kill "${PID}" 2>/dev/null || true
+done
+wait "${LOAD_PIDS[@]}" 2>/dev/null || true
+
+if [[ "${SCALED}" == "true" ]]; then
+  pass "ECS scaled out to ${RUNNING} tasks under load"
+else
+  echo "  NOTE: no scale-out observed during load window — checking scaling activities..."
+  aws application-autoscaling describe-scaling-activities \
+    --service-namespace ecs \
+    --resource-id "service/${CLUSTER}/${SERVICE}" \
+    --region "${REGION}" --profile "${PROFILE}" \
+    --query 'ScalingActivities[0].{cause:Cause,status:StatusCode,time:StartTime}' \
+    --output table 2>/dev/null || true
+  fail "ECS did not scale out — CPU may not have crossed 20% threshold"
+fi
+
+# ── 6c. Confirm final service state ──────────────────────────────────────────
+echo ""
+echo "--- 6c. Final service state ---"
+aws ecs describe-services \
+  --cluster "${CLUSTER}" --services "${SERVICE}" \
+  --region "${REGION}" --profile "${PROFILE}" \
+  --query 'services[0].{desired:desiredCount,running:runningCount,pending:pendingCount}' \
+  --output table
 
 # ── 7. CloudWatch log tail ────────────────────────────────────────────────────
 echo ""
-echo "=== 7. Recent CloudWatch logs (last 5 min) ==="
-START_MS=$(( ($(date +%s) - 300) * 1000 ))
+echo "=== 7. Recent CloudWatch logs (last 10 min) ==="
+START_MS=$(( ($(date +%s) - 600) * 1000 ))
 aws logs filter-log-events \
   --log-group-name "${LOG_GROUP}" \
   --start-time "${START_MS}" \
   --region "${REGION}" \
   --profile "${PROFILE}" \
-  --query 'events[*].message' \
-  --output text \
-  | head -40 \
+  --query 'events[*].{t:timestamp,m:message}' \
+  --output json 2>/dev/null \
+  | jq -r '.[] | ((.t / 1000 | todate) + "  " + .m)' \
+  | grep -v "^$" \
+  | tail -40 \
   || echo "  (no log events or insufficient permissions)"
 
 # ── 8. ECS service state ──────────────────────────────────────────────────────

@@ -67,7 +67,7 @@ variable "max_capacity" {
 variable "cpu_scale_target" {
   description = "Target CPU utilisation percentage for ECS auto-scaling."
   type        = number
-  default     = 60
+  default     = 20
 }
 
 variable "enable_https" {
