@@ -195,6 +195,7 @@ gh run watch
 ```
 
 This:
+
 1. Authenticates to ECR
 2. Builds the Spring Boot Docker image from `app/`
 3. Pushes with the commit SHA tag and `latest` tag
@@ -230,6 +231,7 @@ chmod +x scripts/examples/containerised-app-prod/aws.sh
 ```
 
 The script:
+
 1. Looks up the ALB DNS name via AWS CLI (`--profile sandbox`)
 2. Validates the health endpoint
 3. Runs a quick items API smoke test
@@ -241,6 +243,7 @@ The script:
 9. Prints a pass/fail summary
 
 Options:
+
 ```bash
 ./aws.sh --profile my-profile --hostname fargate-test.edoatley.co.uk
 ```
@@ -250,12 +253,14 @@ Options:
 ## AWS Console — where to look
 
 ### ECS
+
 - **Clusters** → `tf-public-cloud-app-prod`
   - **Tasks** tab — running count, AZ spread, task health
   - Click a task → **Logs** tab — live CloudWatch log stream for that container
 - **Task definitions** → `tf-public-cloud-app-prod` — CPU/memory allocation, image URI, health check command
 
 ### CloudWatch
+
 - **Log groups** → `/ecs/tf-public-cloud-app-prod`
   - Filter by `ERROR` or `WARN` to find application errors
   - Each log stream is named `ecs/app/<task-id>`
@@ -270,6 +275,7 @@ Options:
   - `...-cpu-high` — service average CPU > 80% (2-period evaluation)
 
 ### EC2 / Load Balancing
+
 - **Load Balancers** → `tf-public-cloud-app-prod-alb`
   - **Monitoring** tab — request count, latency, HTTP status breakdown
   - **Listeners** tab — HTTP:80 redirect rule, HTTPS:443 forward rule
@@ -278,11 +284,13 @@ Options:
   - Healthy threshold: 2 checks, unhealthy: 3 checks, interval: 30 s
 
 ### Route53
+
 - **Hosted zones** → `fargate-test.edoatley.co.uk`
   - A alias record → ALB DNS name
   - CNAME records for ACM certificate validation
 
 ### ACM
+
 - **Certificates** — find the certificate for `fargate-test.edoatley.co.uk`
   - Status should be `Issued`
   - Domain validation records should show as `Success`

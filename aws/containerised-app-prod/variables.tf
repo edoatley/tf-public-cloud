@@ -55,7 +55,7 @@ variable "subnet_cidr_private_b" {
 variable "min_capacity" {
   description = "Minimum number of ECS tasks for auto-scaling."
   type        = number
-  default     = 1
+  default     = 2
 }
 
 variable "max_capacity" {

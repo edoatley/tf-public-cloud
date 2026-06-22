@@ -23,9 +23,16 @@ while [[ $# -gt 0 ]]; do
 done
 
 PASS=0; FAIL=0
+TMPFILE=$(mktemp)
+trap 'rm -f "${TMPFILE}"' EXIT
 
-pass() { echo "  PASS: $*"; ((PASS++)); }
-fail() { echo "  FAIL: $*"; ((FAIL++)); }
+pass() { echo "  PASS: $*"; PASS=$((PASS + 1)); }
+fail() { echo "  FAIL: $*"; FAIL=$((FAIL + 1)); }
+
+# curl into TMPFILE; last line is the HTTP status code, rest is body
+curl_check() { curl -s -w '\n%{http_code}' "$@" > "${TMPFILE}"; }
+body() { awk 'NR>1{print prev} {prev=$0}' "${TMPFILE}"; }
+code() { tail -1 "${TMPFILE}"; }
 
 # ── 1. Resolve ALB DNS (sanity check) ────────────────────────────────────────
 echo "=== 1. ALB lookup ==="
@@ -41,12 +48,13 @@ echo "  TLS host: ${HOSTNAME}"
 # ── 2. Health check ───────────────────────────────────────────────────────────
 echo ""
 echo "=== 2. Health check ==="
-HEALTH_BODY=$(curl -sf "${BASE_URL}/actuator/health")
-STATUS=$(echo "${HEALTH_BODY}" | jq -r '.status')
-if [[ "${STATUS}" == "UP" ]]; then
+curl_check "${BASE_URL}/actuator/health"
+HEALTH_CODE=$(code); HEALTH_BODY=$(body)
+STATUS=$(echo "${HEALTH_BODY}" | jq -r '.status // "UNKNOWN"')
+if [[ "${HEALTH_CODE}" == "200" && "${STATUS}" == "UP" ]]; then
   pass "health endpoint returned UP"
 else
-  fail "health endpoint returned: ${STATUS}"
+  fail "health endpoint: HTTP ${HEALTH_CODE}, status=${STATUS}"
   echo "  Body: ${HEALTH_BODY}"
   exit 1
 fi
@@ -54,21 +62,31 @@ fi
 # ── 3. Items API smoke test ───────────────────────────────────────────────────
 echo ""
 echo "=== 3. Items API smoke test ==="
-ITEMS=$(curl -sf "${BASE_URL}/api/items")
-COUNT=$(echo "${ITEMS}" | jq 'length')
-if [[ "${COUNT}" -gt 0 ]]; then
-  pass "GET /api/items returned ${COUNT} items"
+curl_check "${BASE_URL}/api/items"
+ITEMS_CODE=$(code); ITEMS=$(body)
+if [[ "${ITEMS_CODE}" == "200" ]]; then
+  COUNT=$(echo "${ITEMS}" | jq 'length')
+  if [[ "${COUNT}" -gt 0 ]]; then
+    pass "GET /api/items returned ${COUNT} items"
+  else
+    fail "GET /api/items returned empty array"
+    COUNT=0
+  fi
 else
-  fail "GET /api/items returned no items"
+  fail "GET /api/items returned HTTP ${ITEMS_CODE}"
+  COUNT=0
 fi
 
-FIRST_ID=$(echo "${ITEMS}" | jq -r '.[0].id')
-ITEM=$(curl -sf "${BASE_URL}/api/items/${FIRST_ID}")
-NAME=$(echo "${ITEM}" | jq -r '.name')
-if [[ -n "${NAME}" ]]; then
-  pass "GET /api/items/${FIRST_ID} returned item: ${NAME}"
-else
-  fail "GET /api/items/${FIRST_ID} returned no name"
+if [[ "${COUNT}" -gt 0 ]]; then
+  FIRST_ID=$(echo "${ITEMS}" | jq -r '.[0].id')
+  curl_check "${BASE_URL}/api/items/${FIRST_ID}"
+  ITEM_CODE=$(code); ITEM=$(body)
+  NAME=$(echo "${ITEM}" | jq -r '.name // ""')
+  if [[ "${ITEM_CODE}" == "200" && -n "${NAME}" ]]; then
+    pass "GET /api/items/${FIRST_ID} returned item: ${NAME}"
+  else
+    fail "GET /api/items/${FIRST_ID}: HTTP ${ITEM_CODE}, name=${NAME}"
+  fi
 fi
 
 # ── 4. Load: 5 TPS for 30s ───────────────────────────────────────────────────
@@ -80,9 +98,9 @@ while [[ $SECONDS -lt $END ]]; do
   for _ in $(seq 1 "${TPS}"); do
     CODE=$(curl -s -o /dev/null -w "%{http_code}" "${BASE_URL}/api/items")
     if [[ "${CODE}" == "200" ]]; then
-      ((HTTP_200++))
+      HTTP_200=$((HTTP_200 + 1))
     else
-      ((HTTP_OTHER++))
+      HTTP_OTHER=$((HTTP_OTHER + 1))
       echo "  unexpected HTTP ${CODE}"
     fi
   done
@@ -111,8 +129,9 @@ fi
 # ── 6. Health toggle: drive unhealthy → ALB 503 ──────────────────────────────
 echo ""
 echo "=== 6. Health toggle (DOWN → 503 → UP → recovery) ==="
-TOGGLE=$(curl -sf -X POST "${BASE_URL}/health/toggle")
-echo "  Toggle response: $(echo "${TOGGLE}" | jq -c .)"
+curl_check -X POST "${BASE_URL}/health/toggle"
+TOGGLE_CODE=$(code); TOGGLE_BODY=$(body)
+echo "  Toggle response: HTTP ${TOGGLE_CODE} $(echo "${TOGGLE_BODY}" | jq -c . 2>/dev/null || echo "${TOGGLE_BODY}")"
 echo "  Waiting 15s for ALB health checks to detect unhealthy state..."
 sleep 15
 
@@ -125,16 +144,19 @@ else
 fi
 
 echo "  Toggling health back UP..."
-TOGGLE=$(curl -sf -X POST "${BASE_URL}/health/toggle")
-echo "  Toggle response: $(echo "${TOGGLE}" | jq -c .)"
+curl_check -X POST "${BASE_URL}/health/toggle"
+TOGGLE_CODE=$(code); TOGGLE_BODY=$(body)
+echo "  Toggle response: HTTP ${TOGGLE_CODE} $(echo "${TOGGLE_BODY}" | jq -c . 2>/dev/null || echo "${TOGGLE_BODY}")"
 echo "  Waiting 30s for recovery (2 consecutive successful health checks)..."
 sleep 30
 
-STATUS=$(curl -sf "${BASE_URL}/actuator/health" | jq -r '.status')
-if [[ "${STATUS}" == "UP" ]]; then
+curl_check "${BASE_URL}/actuator/health"
+RECOVER_CODE=$(code); RECOVER_BODY=$(body)
+STATUS=$(echo "${RECOVER_BODY}" | jq -r '.status // "UNKNOWN"')
+if [[ "${RECOVER_CODE}" == "200" && "${STATUS}" == "UP" ]]; then
   pass "service recovered: health is UP"
 else
-  fail "service did not recover: health is ${STATUS}"
+  fail "service did not recover: HTTP ${RECOVER_CODE}, status=${STATUS}"
 fi
 
 # ── 7. CloudWatch log tail ────────────────────────────────────────────────────
