@@ -1,9 +1,6 @@
 name: Deploy App to ECS
 
 on:
-  push:
-    branches: [main]
-    paths: ["app/**"]
   workflow_dispatch:
     inputs:
       image_tag:
