@@ -136,44 +136,48 @@ echo "=== 6. AZ failover + autoscaling ==="
 CLUSTER="tf-public-cloud-app-prod"
 SERVICE="tf-public-cloud-app-prod"
 
-# ── 6a. Drop to 1 task ───────────────────────────────────────────────────────
-echo "--- 6a. Dropping to 1 task ---"
-aws ecs update-service \
-  --cluster "${CLUSTER}" \
-  --service "${SERVICE}" \
-  --desired-count 1 \
-  --region "${REGION}" \
-  --profile "${PROFILE}" \
-  --query 'service.{desired:desiredCount,running:runningCount}' \
+# ── 6a. Kill one task, confirm the other AZ keeps serving ────────────────────
+echo "--- 6a. Stopping one task (AZ failover) ---"
+
+# Pick the first running task and record its AZ
+TASK_ARN=$(aws ecs list-tasks \
+  --cluster "${CLUSTER}" --service-name "${SERVICE}" \
+  --region "${REGION}" --profile "${PROFILE}" \
+  --query 'taskArns[0]' --output text)
+TASK_AZ=$(aws ecs describe-tasks \
+  --cluster "${CLUSTER}" --tasks "${TASK_ARN}" \
+  --region "${REGION}" --profile "${PROFILE}" \
+  --query 'tasks[0].availabilityZone' --output text)
+echo "  Stopping task in ${TASK_AZ}: ${TASK_ARN##*/}"
+
+aws ecs stop-task \
+  --cluster "${CLUSTER}" --task "${TASK_ARN}" \
+  --reason "load-test AZ failover simulation" \
+  --region "${REGION}" --profile "${PROFILE}" \
+  --query 'task.{lastStatus:lastStatus,az:availabilityZone}' \
   --output table
 
-echo "  Waiting 30s for task to drain..."
-sleep 30
-
-RUNNING=$(aws ecs describe-services \
-  --cluster "${CLUSTER}" --services "${SERVICE}" \
-  --region "${REGION}" --profile "${PROFILE}" \
-  --query 'services[0].runningCount' --output text)
-echo "  Running tasks: ${RUNNING}"
+echo "  Waiting 20s for ALB to drain stopped task..."
+sleep 20
 
 CODE=$(curl -s -o /dev/null -w "%{http_code}" "${BASE_URL}/api/items")
 if [[ "${CODE}" == "200" ]]; then
-  pass "traffic still served with 1 task (AZ failover confirmed)"
+  pass "traffic still served after task stop (AZ failover confirmed)"
 else
-  fail "unexpected HTTP ${CODE} with 1 task running"
+  fail "unexpected HTTP ${CODE} after task stop"
 fi
 
-TASK_AZ=$(aws ecs describe-tasks \
-  --cluster "${CLUSTER}" \
-  --tasks "$(aws ecs list-tasks --cluster "${CLUSTER}" --service-name "${SERVICE}" \
-    --region "${REGION}" --profile "${PROFILE}" --query 'taskArns[0]' --output text)" \
+# Confirm ECS has already restarted a replacement (desired=2 still)
+RUNNING=$(aws ecs describe-services \
+  --cluster "${CLUSTER}" --services "${SERVICE}" \
   --region "${REGION}" --profile "${PROFILE}" \
-  --query 'tasks[0].availabilityZone' --output text)
-echo "  Surviving task AZ: ${TASK_AZ}"
+  --query 'services[0].{desired:desiredCount,running:runningCount,pending:pendingCount}' \
+  --output table)
+echo "${RUNNING}"
 
 # ── 6b. Drive load to trigger autoscaling ────────────────────────────────────
 echo ""
-echo "--- 6b. Driving load to trigger autoscale (cpu_scale_target=20%) ---"
+echo "--- 6b. Driving load to trigger autoscale (cpu_scale_target=5%) ---"
 echo "  Sending sustained load for 180s (monitoring CPU every 20s)..."
 LOAD_END=$((SECONDS + 180))
 LOAD_PIDS=()
