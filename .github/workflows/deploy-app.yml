@@ -55,8 +55,6 @@ jobs:
           IMAGE="${{ steps.ecr.outputs.repo_url }}:${{ steps.ecr.outputs.image_tag }}"
           docker build -t "${IMAGE}" .
           docker push "${IMAGE}"
-          docker tag "${IMAGE}" "${{ steps.ecr.outputs.repo_url }}:latest"
-          docker push "${{ steps.ecr.outputs.repo_url }}:latest"
 
       - name: Force ECS rolling deploy
         run: |

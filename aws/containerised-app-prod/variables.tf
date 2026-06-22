@@ -5,9 +5,8 @@ variable "region" {
 }
 
 variable "image_tag" {
-  description = "Docker image tag to deploy."
+  description = "Docker image tag to deploy. Must match a tag pushed to ECR (commit SHA)."
   type        = string
-  default     = "latest"
 }
 
 variable "cpu" {
