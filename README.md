@@ -45,7 +45,8 @@ gh run watch
 | Apply Resource | `apply-resource.yml` | Applies or destroys a named resource type against one or all clouds via `workflow_dispatch`. Requires approval via the `production` GitHub environment — write credentials are only issued after the gate is passed. |
 | Build and Push | `build-and-push.yml` | Builds the Spring Boot container image and pushes it to each cloud's container registry. Run this after applying `container-registry` and before applying `containerised-app`. |
 
-All workflows authenticate via OIDC — no long-lived credentials. See `docs/BOOTSTRAP.md` for the required GitHub Actions Variables.
+All workflows authenticate via OIDC — no long-lived credentials. See `docs/BOOTSTRAP.md` for the required GitHub Actions Variables,
+and [docs/gcp-authentication.md](docs/gcp-authentication.md) for a step-by-step account of the GCP token exchange.
 
 ## Examples
 
