@@ -118,9 +118,11 @@ Azure modules must pass `subscription_id` as a variable (injected via `TF_VAR_su
 `.github/workflows/terraform.yml` runs on PRs and pushes to `main` for any `*.tf` change. It:
 
 1. **detect** — finds the single changed Terraform module. PRs that touch multiple modules fail; pushes skip with a warning (use `workflow_dispatch` to target a specific module).
-2. **validate** — `init`, `fmt -check`, `validate`, `tflint`.
-3. **plan** — `terraform plan`, uploads the binary plan as an artifact, posts a collapsible comment on PRs.
-4. **apply** — downloads the plan artifact and applies it (main branch push only).
+2. **validate** — `init`, `fmt -check`, `validate`, `tflint`. Runs in `environment: default`.
+3. **trivy** — `config` and `secret` scan across the whole repo, posting a count comment on PRs. Runs independently of detect/validate so it fires on workflow-only PRs too.
+
+`terraform.yml` does not plan or apply. Plan and apply are `workflow_dispatch` only, in
+`plan-resource.yml` (`environment: default`) and `apply-resource.yml` (`environment: production`).
 
 Authentication uses OIDC — no long-lived credentials. The plan role (`AWS_PLAN_ROLE_ARN`) is used for validate/plan; the apply role (`AWS_ROLE_ARN`) is used for apply.
 

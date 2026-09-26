@@ -103,7 +103,9 @@ gh variable set AWS_REGION        --body "eu-west-2"
 
 `scripts/bootstrap/bootstrap-gcp.sh` handles everything in one go:
 
-- Enables required GCP APIs: `iamcredentials`, `sts`, `cloudresourcemanager`, `storage`, `iam`
+- Enables required GCP APIs: `iamcredentials`, `sts`, `cloudresourcemanager`, `storage`, `iam`,
+  `compute`, `cloudfunctions`, `cloudbuild` — the first two are the endpoints the token exchange
+  itself calls; the rest are needed by the example modules
 - Creates the GCS state bucket with uniform access, versioning, and public access prevention
 - Creates a Workload Identity Pool (`github-pool`) and OIDC Provider (`github-provider`) with attribute
   mapping for `repository`, `ref`, and `environment` claims
@@ -118,6 +120,9 @@ gh variable set AWS_REGION        --body "eu-west-2"
 ```sh
 ./scripts/bootstrap/bootstrap-gcp.sh
 ```
+
+See [docs/gcp-authentication.md](gcp-authentication.md) for a step-by-step walk through what
+this creates and how a workflow job uses it at runtime.
 
 The script prints all values you need for `backend.tf` and GitHub Variables at the end.
 

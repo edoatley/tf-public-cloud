@@ -58,12 +58,13 @@ The GCP Workload Identity Federation provider maps the GitHub OIDC `environment`
 
 Triggered by pull requests and pushes to `main` for any `*.tf` change.
 
-**Jobs:** detect → validate → plan → apply (main only)
+**Jobs:** detect → validate, plus trivy in parallel
 
 - **detect**: finds the single changed module. PRs touching multiple modules fail; pushes skip with a warning.
 - **validate**: `terraform init`, `fmt -check`, `validate`, `tflint`. Uses `environment: default`.
-- **plan**: `terraform plan`, uploads binary plan artifact, posts collapsible comment on PRs. Uses `environment: default`.
-- **apply**: downloads plan artifact and applies (main branch push only). Uses `environment: production`.
+- **trivy**: `config` and `secret` scan across the whole repo. Writes findings to the job summary and posts a count comment on PRs. Does not depend on `detect`, so it also runs on PRs that touch no Terraform.
+
+This workflow validates only — it never plans or applies. Use `plan-resource.yml` and `apply-resource.yml` for that.
 
 ### `plan-resource.yml` — Manual plan for a specific module
 
