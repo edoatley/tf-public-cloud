@@ -10,9 +10,9 @@ variable "region" {
 }
 
 variable "zone" {
-  description = "GCP zone for the producer and consumer Compute Engine instances."
+  description = "GCP zone for the producer and consumer Compute Engine instances. Only the two instances and the instance group are zonal, so changing this does not recreate anything regional."
   type        = string
-  default     = "europe-west2-a"
+  default     = "europe-west2-b"
 }
 
 variable "name_prefix" {
