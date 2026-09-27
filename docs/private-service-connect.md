@@ -101,7 +101,7 @@ It also has two consequences worth internalising:
 **Optional variables (all have defaults):**
 
 - `region` — default `europe-west2`. Both VPCs, the load balancer and the endpoint must share one region.
-- `zone` — default `europe-west2-a`.
+- `zone` — default `europe-west2-b`. Only the instances and instance group are zonal, so a stockout in one zone is a one-line change that recreates nothing regional.
 - `name_prefix` — default `tf-public-cloud-psc`. A random hex suffix is appended.
 - `machine_type` — default `e2-micro` for both instances.
 - `producer_cidr` — default `10.10.0.0/24`.
@@ -207,7 +207,7 @@ terraform output producer_instance_ip                   # an address the consume
 
 # The producer's view of the client: a PSC NAT address, not the consumer VM
 gcloud compute instances get-serial-port-output "$(terraform output -raw producer_instance_name)" \
-  --zone europe-west2-a | grep 'GET / HTTP'
+  --zone europe-west2-b | grep 'GET / HTTP'
 
 # What is NOT there
 gcloud compute networks describe "$(terraform output -raw producer_network_name)" \
@@ -215,7 +215,7 @@ gcloud compute networks describe "$(terraform output -raw producer_network_name)
 
 # Poke around from inside the consumer
 gcloud compute ssh "$(terraform output -raw consumer_instance_name)" \
-  --zone europe-west2-a --tunnel-through-iap
+  --zone europe-west2-b --tunnel-through-iap
 consumer$ curl "$(…psc_endpoint_ip)"                    # 200
 consumer$ ip route get <producer_instance_ip>           # via the default gateway, no VPC route
 consumer$ curl -m 5 <producer_instance_ip>              # times out — no path to the producer
