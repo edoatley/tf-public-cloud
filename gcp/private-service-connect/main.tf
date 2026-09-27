@@ -122,6 +122,8 @@ resource "google_compute_region_backend_service" "producer" {
 
   backend {
     group = google_compute_instance_group.producer.id
+    # An INTERNAL backend service rejects the UTILIZATION default with a 400.
+    balancing_mode = "CONNECTION"
   }
 }
 
