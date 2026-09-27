@@ -53,6 +53,7 @@ gcloud services enable \
   storage.googleapis.com \
   iam.googleapis.com \
   compute.googleapis.com \
+  servicedirectory.googleapis.com \
   cloudfunctions.googleapis.com \
   cloudbuild.googleapis.com \
   --project="${GCP_PROJECT}"
