@@ -7,6 +7,7 @@
     - [Three different things are called PSC](#three-different-things-are-called-psc)
     - [Why a load balancer is mandatory](#why-a-load-balancer-is-mandatory)
     - [The NAT subnetwork](#the-nat-subnetwork)
+    - [How a packet actually gets there](#how-a-packet-actually-gets-there)
   - [GCP — Private Service Connect](#gcp--private-service-connect)
     - [`gcp/private-service-connect`](#gcpprivate-service-connect)
     - [Key design decisions](#key-design-decisions)
@@ -89,6 +90,30 @@ It also has two consequences worth internalising:
   and times out at the data plane — a failure that looks like success from the Terraform output.
 - **The producer never learns the client's real address.** Use the PSC connection ID for
   attribution instead.
+
+### How a packet actually gets there
+
+![PSC packet flow](images/private-service-connect-packet-flow.drawio.png)
+
+*Two packets leave the same VM, to the same next hop, over the same wire. One reaches the
+service and one is dropped, and nothing in the guest distinguishes them.*
+
+The consumer VM's address is a **/32**, so it has no concept of a local subnet. Its entire
+routing table is a default route, a link route to the gateway, and the metadata server — every
+packet is handed to `10.20.0.1` regardless of destination. `ip route get` returns identical
+output for the PSC endpoint and for the producer VM.
+
+`10.20.0.1` is not a device. It is Andromeda, Google's SDN, intercepting at the virtual NIC, and
+every routing decision happens there. For the endpoint address it finds a **PSC mapping** —
+the address is bound to the consumer forwarding rule, whose target is the service attachment —
+and tunnels the flow across Google's fabric. That is not a route, which is why the consumer
+VPC's route table contains nothing pointing at the producer, and why the two CIDR ranges would
+be free to overlap. For the producer VM's own address it finds no route at all, and the packet
+is dropped.
+
+The practical consequence: **the consumer can reach the service and cannot reach the network
+hosting it.** Verifying that requires a connection attempt, not a look at the guest's routing
+table — see the note on check 5 in [Verifying](#verifying).
 
 ## GCP — Private Service Connect
 
@@ -212,6 +237,15 @@ which `terraform validate`, `tflint` or `terraform plan` could have caught.
 | 4 | Neither network has any VPC peering                              | Yes            | No            |
 | 5 | Consumer has no route into the producer VPC                      | No — skips     | Yes           |
 | 6 | Live on-demand `curl` through the endpoint                       | No — skips     | Yes           |
+
+**Check 5 is weaker than it looks.** It inspects the guest's routing table, but in GCP a VM has
+a /32 address and a single default route, so `ip route get` returns the same next hop for *every*
+destination — it would report exactly the same thing if the VPCs were peered. It proves the
+guest makes no routing decision; it does not prove the producer VPC is unreachable. The
+assertions that actually prove that are a connection attempt (`curl -m 5 http://10.10.0.2/`
+must time out) and the VPC route table carrying no peering next hop. Replacing check 5 with
+those two is tracked in
+[docs/todo/post-apply-verification-in-ci.md](todo/post-apply-verification-in-ci.md).
 
 Checks 5 and 6 need `roles/iap.tunnelResourceAccessor` on the caller and may need
 `gcloud services enable iap.googleapis.com`. They are deliberately not load-bearing: checks 1–4

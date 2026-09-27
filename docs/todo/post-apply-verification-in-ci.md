@@ -59,6 +59,13 @@ and for the PSC module that diverged from "it works" across three consecutive re
    `scripts/examples/virtual-machine/gcp.sh`.
 5. Document the new action in `docs/GitHub.md` under the `apply-resource.yml` entry, and note
    the preflight step in each module doc's Deploying section.
+6. Replace check 5 in `scripts/examples/private-service-connect/gcp.sh`. It currently inspects
+   the guest routing table, which in GCP is a /32 plus one default route — so `ip route get`
+   returns the same next hop for every destination and the check would pass identically on
+   peered VPCs. Substitute two assertions that do prove unreachability: `curl -m 5
+   http://<producer_instance_ip>/` must fail (exit 28), and `gcloud compute routes list` for the
+   consumer network must show no `nextHopPeering` and no route covering the producer range. The
+   second needs no IAP, so it can move into the hard-assertion set.
 
 ## Acceptance criteria
 
@@ -69,6 +76,7 @@ and for the PSC module that diverged from "it works" across three consecutive re
 - [ ] A deliberately broken module (e.g. producer firewall set to `consumer_cidr` instead of
       `psc_nat_cidr`) is caught by preflight — this is the regression the work exists to prevent
 - [ ] `docs/GitHub.md` describes `preflight` alongside apply and destroy
+- [ ] Check 5 no longer passes on a guest routing table alone; a peered-VPC setup would fail it
 
 ## Related docs
 

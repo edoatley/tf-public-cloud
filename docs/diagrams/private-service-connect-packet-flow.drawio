@@ -1,0 +1,66 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <mxCell id="title" value="PSC packet flow: why one packet reaches the service and an identical-looking one does not" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+      <mxGeometry x="20" y="12" width="1360" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="subtitle" value="Both packets leave the same VM, to the same next hop, over the same wire. Everything that differs happens inside Google's SDN." style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=11;fontColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="20" y="40" width="1360" height="20" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="laneA" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;opacity=40;pointerEvents=0;arcSize=2;" vertex="1" parent="1">
+      <mxGeometry x="20" y="76" width="1360" height="272" as="geometry"/>
+    </mxCell>
+    <mxCell id="laneA-lbl" value="PACKET A  —  curl http://10.20.0.2/   (the PSC endpoint)     REACHES THE SERVICE" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#2d6a1f;" vertex="1" parent="1">
+      <mxGeometry x="38" y="84" width="900" height="20" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="a1" value="1.  CONSUMER VM&#xa;&#xa;src 10.20.0.3&#xa;dst 10.20.0.2&#xa;&#xa;The address is a /32, so the&#xa;guest has one default route&#xa;and makes no decision at all." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e4d78;strokeColor=#1e4d78;fontColor=#ffffff;fontSize=11;arcSize=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+      <mxGeometry x="41" y="114" width="230" height="212" as="geometry"/>
+    </mxCell>
+    <mxCell id="a2" value="2.  GATEWAY 10.20.0.1&#xa;&#xa;Not a device — this is&#xa;Andromeda, Google's SDN,&#xa;intercepting at the virtual NIC.&#xa;&#xa;Every packet arrives here.&#xa;All routing happens here." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#555555;strokeColor=#555555;fontColor=#ffffff;fontSize=11;arcSize=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+      <mxGeometry x="313" y="114" width="230" height="212" as="geometry"/>
+    </mxCell>
+    <mxCell id="a3" value="3.  PSC MAPPING MATCH&#xa;&#xa;10.20.0.2 is bound to the&#xa;consumer forwarding rule,&#xa;whose target is the service&#xa;attachment.&#xa;&#xa;A mapping, not a route.&#xa;Nothing is routed between VPCs." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a1b9a;strokeColor=#6a1b9a;fontColor=#ffffff;fontSize=11;arcSize=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+      <mxGeometry x="585" y="114" width="230" height="212" as="geometry"/>
+    </mxCell>
+    <mxCell id="a4" value="4.  SERVICE ATTACHMENT&#xa;     + SOURCE NAT&#xa;&#xa;src 10.20.0.3 becomes&#xa;src 10.10.100.2&#xa;&#xa;an address from the PSC NAT&#xa;subnetwork, 10.10.100.0/24" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a1b9a;strokeColor=#6a1b9a;fontColor=#ffffff;fontSize=11;arcSize=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+      <mxGeometry x="857" y="114" width="230" height="212" as="geometry"/>
+    </mxCell>
+    <mxCell id="a5" value="5.  ILB  then  PRODUCER VM&#xa;10.10.0.2:80&#xa;&#xa;sees src 10.10.100.2&#xa;never sees 10.20.0.3&#xa;&#xa;The reply retraces the path&#xa;and the NAT is reversed." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d6a1f;strokeColor=#2d6a1f;fontColor=#ffffff;fontSize=11;arcSize=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+      <mxGeometry x="1129" y="114" width="230" height="212" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="ea12" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2d6a1f;strokeWidth=2.5;" edge="1" parent="1" source="a1" target="a2"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="ea23" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2d6a1f;strokeWidth=2.5;" edge="1" parent="1" source="a2" target="a3"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="ea34" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2d6a1f;strokeWidth=2.5;" edge="1" parent="1" source="a3" target="a4"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="ea45" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2d6a1f;strokeWidth=2.5;" edge="1" parent="1" source="a4" target="a5"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <mxCell id="laneB" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;strokeWidth=2;opacity=40;pointerEvents=0;arcSize=2;" vertex="1" parent="1">
+      <mxGeometry x="20" y="368" width="1360" height="248" as="geometry"/>
+    </mxCell>
+    <mxCell id="laneB-lbl" value="PACKET B  —  curl http://10.10.0.2/   (the producer VM itself)     NEVER ARRIVES" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#b71c1c;" vertex="1" parent="1">
+      <mxGeometry x="38" y="376" width="900" height="20" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="b1" value="1.  CONSUMER VM&#xa;&#xa;src 10.20.0.3&#xa;dst 10.10.0.2   (producer VM)&#xa;&#xa;ip route get returns exactly the same&#xa;next hop as packet A: via 10.20.0.1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e4d78;strokeColor=#1e4d78;fontColor=#ffffff;fontSize=11;arcSize=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+      <mxGeometry x="60" y="406" width="380" height="184" as="geometry"/>
+    </mxCell>
+    <mxCell id="b2" value="2.  GATEWAY 10.20.0.1&#xa;&#xa;Andromeda again. Same first hop.&#xa;&#xa;Nothing about the guest, the NIC or&#xa;the wire differs between A and B." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#555555;strokeColor=#555555;fontColor=#ffffff;fontSize=11;arcSize=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+      <mxGeometry x="500" y="406" width="380" height="184" as="geometry"/>
+    </mxCell>
+    <mxCell id="b3" value="3.  ROUTE LOOKUP FAILS — DROPPED&#xa;&#xa;The consumer VPC route table holds only:&#xa;    0.0.0.0/0        default internet gateway&#xa;    10.20.0.0/24  local subnet&#xa;&#xa;No peering route exists, and 10.10.0.2 is&#xa;RFC1918 so it is not sent to the internet.&#xa;&#xa;curl: exit 28, timeout" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#b71c1c;strokeColor=#b71c1c;fontColor=#ffffff;fontSize=11;arcSize=10;verticalAlign=top;spacingTop=8;" vertex="1" parent="1">
+      <mxGeometry x="940" y="406" width="380" height="184" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="eb12" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#b71c1c;strokeWidth=2.5;" edge="1" parent="1" source="b1" target="b2"><mxGeometry relative="1" as="geometry"/></mxCell>
+    <mxCell id="eb23" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#b71c1c;strokeWidth=2.5;" edge="1" parent="1" source="b2" target="b3"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+    <mxCell id="callout" value="The guest cannot tell these two apart&#xa;&#xa;    $ ip route get 10.20.0.2   &#8594;   10.20.0.2 via 10.20.0.1 dev ens4 src 10.20.0.3      (packet A)&#xa;    $ ip route get 10.10.0.2   &#8594;   10.10.0.2 via 10.20.0.1 dev ens4 src 10.20.0.3      (packet B)&#xa;&#xa;Identical. The consumer VM has no route to either destination and no knowledge of the producer VPC. Every difference between&#xa;reaching the service and not reaching the network hosting it lives in Andromeda's forwarding state — which is exactly why no route is&#xa;ever exchanged between the two VPCs, and why their CIDR ranges would be free to overlap." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=14;fillColor=#ffffff;strokeColor=#6a1b9a;fontSize=11;align=left;fontColor=#6a1b9a;verticalAlign=top;spacingTop=8;spacingLeft=6;" vertex="1" parent="1">
+      <mxGeometry x="20" y="640" width="1360" height="132" as="geometry"/>
+    </mxCell>
+
+  </root>
+</mxGraphModel>
