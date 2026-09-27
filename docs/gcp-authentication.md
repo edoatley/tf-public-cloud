@@ -168,27 +168,67 @@ inside GitHub, before any token is minted.
 The action requests an OIDC JWT from the runner's token endpoint, using the WIF provider
 resource name as the audience.
 
-### Step 5 — it writes a credential config, not a token
+### Step 5 - Writing a Credential Config (Preparation)
 
-No `token_format` is set, so the action takes its default path: it writes the JWT to a file,
-and writes a credential configuration JSON that points at that file and carries the service
-account's impersonation URL. It exports `GOOGLE_APPLICATION_CREDENTIALS` at that config.
+When the GitHub Action `google-github-actions/auth` executes without `token_format: 'access_token'`,
+it does not make any network requests to GCP. Instead, it does file setup:
 
-Nothing has been exchanged yet. The step passes as long as the files could be written.
+1. Saves GitHub's OIDC JWT: It fetches the raw identity token minted by GitHub Actions and writes it
+   to a temporary file on the runner's disk.
+2. Generates an ADC Credential Config: It creates a small configuration JSON file that defines an 
+   impersonation recipe. It looks conceptually like this:
 
-### Step 6 — leg one: STS
+```json
+{
+  "type": "external_account",
+  "audience": "//iam.googleapis.com/projects/<PROJECT_NUM>/locations/global/workloadIdentityPools/github-pool/providers/github-provider",
+  "subject_token_type": "urn:ietf:params:oauth:token-type:jwt",
+  "token_url": "https://sts.googleapis.com/v1/token",
+  "credential_source": {
+    "file": "/path/to/github-oidc-token.jwt"
+  },
+  "service_account_impersonation_url": "https://iamcredentials.googleapis.com/v1/projects/-/serviceAccounts/github-actions-tf-apply@<project>.iam.gserviceaccount.com:generateAccessToken"
+}
+```
 
-The first Google client to need credentials — Terraform, or `gcloud` — reads the config and
-POSTs the JWT to `sts.googleapis.com`. Google verifies GitHub's signature against the issuer,
-applies the provider's attribute condition, and maps claims to attributes. What comes back is a
-federated token whose identity *is* the `principalSet`.
+3. Sets the Environment Variable: It points `GOOGLE_APPLICATION_CREDENTIALS` to this JSON file.
+At this point, the GitHub workflow step turns green. GCP has not verified anything yet.
 
-### Step 7 — leg two: impersonation
+### Step 6 - Leg One — The STS Token Exchange
 
-That federated identity calls `generateAccessToken` on `iamcredentials.googleapis.com` for the
-target service account. **This is where `roles/iam.workloadIdentityUser` is checked.** A
-`default`-environment job that somehow asked for the apply SA fails right here. On success: a
-service account access token, valid roughly an hour, never written to persistent storage.
+When Terraform initializes or runs its first command (`terraform init`, `terraform plan`), the
+Google SDK looks at `GOOGLE_APPLICATION_CREDENTIALS` and executes the first leg of the recipe:
+
+1. **Sends the JWT to STS**: The client reads the GitHub JWT from the local file and POSTs it to 
+   `sts.googleapis.com`.
+2. **GCP Validates the Token**:
+  - **Signature**: GCP calls GitHub’s OpenID Connect endpoint (`token.actions.githubusercontent.com`)
+    to confirm GitHub cryptographically signed the JWT.
+  - **Attribute Condition (Gate 1)**: It evaluates `--attribute-condition="assertion.repository == \"edoatley/tf-public-cloud\""`. 
+    If another repo somehow sent a token to your pool, it is dropped here.
+  - **Claim Mapping**: It extracts claims from the JWT and translates them into Google attributes
+     based on your provider mappings:
+     - `assertion.repository → attribute.repository`
+     - `assertion.environment → attribute.environment`
+3. **Result**: STS returns a temporary federated token.
+  - This token does not grant project or bucket permissions directly.
+  - Its identity represents a **`principalSet`** (e.g., `principalSet://.../attribute.environment/production`), 
+    not an actual email address or service account.
+
+### Step 7 - Leg Two — Service Account Impersonation
+
+Because the configuration file contains `service_account_impersonation_url`, the Google client 
+automatically takes that federated token and calls `iamcredentials.googleapis.com`:
+
+1. **Call `generateAccessToken`**: The federated principal asks GCP: "Please issue me a temporary OAuth access
+  token for `github-actions-tf-apply@....`"
+2. **Permission Check (Gate 2)**: GCP inspects the IAM policy directly attached to that target service account:
+  - Does this `principalSet` hold `roles/iam.workloadIdentityUser` on this specific service account?
+  - For `github-actions-tf-apply`, the binding requires: `attribute.environment/production`
+  - If the job declared `environment: default`, the token’s environment claim is not production, and the 
+    request is rejected immediately with an HTTP 403 / permission denied error.
+3. **Result**: If the binding matches, GCP mints an ephemeral Service Account Access Token (valid for roughly 1
+  hour) and keeps it in memory.
 
 ### Step 8 — Terraform uses it
 
