@@ -282,42 +282,103 @@ cannot reach the *network* hosting it.
 
 ### GCP's own analysis: Connectivity Tests
 
-Network Intelligence Center's Connectivity Tests will trace the path independently, which is
-worth doing precisely because it is not our code making the claim. Enable the API, then create
-one test per direction of the argument:
+Network Intelligence Center's Connectivity Tests traces the path itself, which is worth doing
+precisely because it is not this repo's code making the claim. It runs both a configuration
+analysis and a live data plane probe.
+
+**1. Enable the API** (not enabled by a default bootstrap):
 
 ```sh
 gcloud services enable networkmanagement.googleapis.com --project <project>
+```
 
-# A — to the PSC endpoint. Expect REACHABLE.
-gcloud network-management connectivity-tests create psc-a-endpoint --project=<project> \
-  --source-instance=projects/<project>/zones/europe-west2-b/instances/<consumer-vm> \
-  --destination-forwarding-rule=projects/<project>/regions/europe-west2/forwardingRules/<endpoint> \
+**2. Discover the resource names**, the same way the verification script does:
+
+```sh
+PROJECT="$(gcloud config get-value project)"
+REGION=europe-west2
+ZONE=europe-west2-b
+CONSUMER="$(gcloud compute instances list --filter="name~'tf-public-cloud-psc-consumer'" --format='value(name)')"
+PRODUCER="$(gcloud compute instances list --filter="name~'tf-public-cloud-psc-producer'" --format='value(name)')"
+ENDPOINT="$(gcloud compute forwarding-rules list --filter="name~'tf-public-cloud-psc-endpoint'" --format='value(name)')"
+```
+
+**3. Create one test per direction of the argument.** Test A goes to the PSC endpoint and should
+be reachable; test B goes straight at the producer VM and should not be. `--round-trip` on A also
+traces the return path.
+
+```sh
+gcloud network-management connectivity-tests create psc-a-endpoint --project="$PROJECT" \
+  --source-instance=projects/$PROJECT/zones/$ZONE/instances/$CONSUMER \
+  --destination-forwarding-rule=projects/$PROJECT/regions/$REGION/forwardingRules/$ENDPOINT \
   --protocol=TCP --destination-port=80 --round-trip
 
-# B — to the producer VM directly. Expect UNREACHABLE.
-gcloud network-management connectivity-tests create psc-b-producer-vm --project=<project> \
-  --source-instance=projects/<project>/zones/europe-west2-b/instances/<consumer-vm> \
-  --destination-instance=projects/<project>/zones/europe-west2-b/instances/<producer-vm> \
+gcloud network-management connectivity-tests create psc-b-producer-vm --project="$PROJECT" \
+  --source-instance=projects/$PROJECT/zones/$ZONE/instances/$CONSUMER \
+  --destination-instance=projects/$PROJECT/zones/$ZONE/instances/$PRODUCER \
   --protocol=TCP --destination-port=80
 ```
 
-![Connectivity test result for the PSC endpoint](images/psc-connectivity-test.png)
+Each create blocks for a minute or so while the analysis runs.
 
-*Test A. The forward trace names the hops GCP actually walks — subnet route, forwarding rule,
-NAT (Private Service Connect), forwarding rule, load balancer backend analysis — and the return
-trace shows the same NAT undone on the way back. Note the live data plane result: 50/50 packets
-delivered at 0.05 ms median, so this is not only a configuration analysis.*
+**4. Where to find the results.** In the console, **Network Intelligence → Connectivity Tests**:
 
-Test B returns `UNREACHABLE` with cause `PRIVATE_TRAFFIC_TO_INTERNET`: no peering route exists,
-so the default route matches, hands the packet to the internet gateway, and it is dropped there
-for carrying an RFC1918 destination.
+```
+https://console.cloud.google.com/net-intelligence/connectivity/tests/list?project=<project>
+```
 
-Delete both tests afterwards — they carry a small per-test charge:
+Click the test name for the summary, then **Result details → View** on a trace row to open the
+*Configuration analysis trace details* panel, which draws the hop-by-hop path. A `--round-trip`
+test shows two columns, *Forward trace result* and *Return trace result*.
+
+From the CLI, the verdict and the trace are both on the resource:
 
 ```sh
-gcloud network-management connectivity-tests delete psc-a-endpoint --project=<project> --quiet
-gcloud network-management connectivity-tests delete psc-b-producer-vm --project=<project> --quiet
+gcloud network-management connectivity-tests describe psc-a-endpoint \
+  --project="$PROJECT" --format='value(reachabilityDetails.result)'
+
+gcloud network-management connectivity-tests describe psc-a-endpoint \
+  --project="$PROJECT" --format='json(reachabilityDetails.traces)'
+```
+
+#### Test A — to the PSC endpoint
+
+![Connectivity test result for the PSC endpoint](images/psc-connectivity-test.png)
+
+*Reachable both ways, and 50/50 packets delivered at 0.05 ms median — a live data plane result,
+not only a configuration analysis. The forward trace names the hops GCP actually walks: subnet
+route, forwarding rule, **NAT (Private Service Connect)**, forwarding rule, load balancer backend
+analysis. The return trace runs the same hops in reverse with the NAT undone.*
+
+#### Test B — straight at the producer VM
+
+![Connectivity test result for the producer VM](images/psc-connectivity-test-unreachable.png)
+
+*Unreachable, 0/50 packets delivered, latency not available. The trace stops after three hops:
+VM instance, default egress firewall rule, **static route** — then drops, with the reason spelled
+out as "Packet with the internal destination IP address 10.10.0.2 in the region europe-west2 is
+sent to the internet gateway".*
+
+#### Reading the two together
+
+The fork is visible in a single word. Both packets leave the same VM and pass the same egress
+firewall rule, then:
+
+| | Route hop GCP matches | Outcome |
+|---|---|---|
+| A → `10.20.0.2` | **Subnet route** — the consumer's own `10.20.0.0/24`, because the endpoint address is local | Forwarding rule takes over, PSC NAT, delivered |
+| B → `10.10.0.2` | **Static route** — `0.0.0.0/0` to the internet gateway, the only thing that matches | Dropped: `PRIVATE_TRAFFIC_TO_INTERNET` |
+
+No peering hop appears in either trace, and no route covering `10.10.0.0/24` exists in the
+consumer VPC. Packet B is not blocked by a firewall — egress is allowed — it simply has nowhere
+to go, so the default route sends it at the internet gateway, which discards it for carrying an
+RFC1918 destination.
+
+**5. Delete both tests** when finished; they carry a small per-test charge:
+
+```sh
+gcloud network-management connectivity-tests delete psc-a-endpoint   --project="$PROJECT" --quiet
+gcloud network-management connectivity-tests delete psc-b-producer-vm --project="$PROJECT" --quiet
 ```
 
 ## Cleaning up

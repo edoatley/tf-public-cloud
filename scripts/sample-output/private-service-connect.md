@@ -101,11 +101,18 @@ To the producer VM directly, in the same project and region:
 ```
 VM instance
   -> Default egress firewall rule         (default-allow-egress, implied)
-  -> Subnet route                         (0.0.0.0/0, NEXT_HOP_INTERNET_GATEWAY)
+  -> Static route                         (0.0.0.0/0, NEXT_HOP_INTERNET_GATEWAY)
   -> DROP                                 cause: PRIVATE_TRAFFIC_TO_INTERNET
+     "Packet with the internal destination IP address 10.10.0.2 in the
+      region europe-west2 is sent to the internet gateway"
 
-Overall: Unreachable.
+Overall: Unreachable.  Live data plane: 0/50 packets delivered, latency not available.
 ```
+
+The route hop is where the two paths diverge, and the console names the difference: packet A
+matches a **subnet route** (the consumer's own, since the endpoint address is local) and is then
+picked up by a forwarding rule; packet B matches a **static route** (`0.0.0.0/0` to the internet
+gateway) because nothing else covers `10.10.0.0/24`.
 
 No peering hop appears in either trace, and no route covering `10.10.0.0/24` exists in the
 consumer VPC. For packet B the only matching route is the default one, so the packet is handed
