@@ -197,7 +197,10 @@ first.
 ```
 
 The script discovers everything by name via `gcloud`, so it needs no Terraform state access. It
-exits non-zero if any hard assertion fails.
+exits non-zero if any hard assertion fails. Real captured output from a verified deployment is in
+[scripts/sample-output/private-service-connect.md](../scripts/sample-output/private-service-connect.md),
+along with a record of the three live-environment failures the first deployment hit — none of
+which `terraform validate`, `tflint` or `terraform plan` could have caught.
 
 ### What the script checks
 
@@ -212,7 +215,8 @@ exits non-zero if any hard assertion fails.
 
 Checks 5 and 6 need `roles/iap.tunnelResourceAccessor` on the caller and may need
 `gcloud services enable iap.googleapis.com`. They are deliberately not load-bearing: checks 1–4
-already prove the data path and the absence of any network join.
+already prove the data path and the absence of any network join. On a verified run all seven
+assertions pass with nothing skipped.
 
 ### Doing it by hand
 
