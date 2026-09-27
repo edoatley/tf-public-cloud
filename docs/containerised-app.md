@@ -197,7 +197,7 @@ The app uses an in-memory item list — there is no database. It is packaged as 
 - `google_artifact_registry_repository` — Docker-format repository in `europe-west2`
 - `google_artifact_registry_repository_iam_member` — grants `roles/artifactregistry.writer` to the CI service account
 
-The IAM binding is managed in Terraform rather than via the `gcp-permissions.json` bootstrap because it is scoped to the specific repository (not the project), and it requires the repository to exist first.
+The IAM binding is managed in Terraform rather than via the `gcp-apply-permissions.json` bootstrap because it is scoped to the specific repository (not the project), and it requires the repository to exist first.
 
 **Key design decisions:**
 - `ci_service_account` is a required variable — it is passed automatically via `TF_VAR_ci_service_account` in the deploy workflow, set from the `GCP_SERVICE_ACCOUNT` repo variable
@@ -292,10 +292,10 @@ The new modules require additional permissions for ECR, ECS, ELB, CloudWatch Log
 # GCP
 ./scripts/bootstrap/apply-gcp-iam-bindings.sh \
   github-actions-tf@gcp-sandbox-2026-18798.iam.gserviceaccount.com \
-  scripts/iam/gcp-permissions.json
+  scripts/iam/gcp-apply-permissions.json
 
 # Azure
-./scripts/bootstrap/apply-azure-rbac.sh 709d0fbb-cd53-4a53-9d53-2db74a0151d7 scripts/iam/azure-permissions.json
+./scripts/bootstrap/apply-azure-rbac.sh 709d0fbb-cd53-4a53-9d53-2db74a0151d7 scripts/iam/azure-apply-permissions.json
 ```
 
 ### Step 2 — Commit and push

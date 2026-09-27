@@ -162,7 +162,7 @@ table — see the note on check 5 in [Verifying](#verifying).
   `roles/compute.admin`. But creating the consumer's PSC endpoint auto-registers it in a
   Service Directory namespace called `goog-psc-default`, which needs
   `servicedirectory.namespaces.create`. So this module adds `roles/servicedirectory.editor` to
-  `scripts/iam/gcp-permissions.json`, and `servicedirectory.googleapis.com` to the API list in
+  `scripts/iam/gcp-apply-permissions.json`, and `servicedirectory.googleapis.com` to the API list in
   `scripts/bootstrap/bootstrap-gcp.sh`. On an existing project both have to be applied by hand
   before the first apply — see [Deploying](#deploying).
 

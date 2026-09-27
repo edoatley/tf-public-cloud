@@ -7,10 +7,10 @@
 #
 # Examples:
 #   # Add all role assignments in the file
-#   ./scripts/apply-azure-rbac.sh YOUR_CLIENT_ID scripts/iam/azure-permissions.json
+#   ./scripts/apply-azure-rbac.sh YOUR_CLIENT_ID scripts/iam/azure-apply-permissions.json
 #
 #   # Remove all role assignments in the file
-#   ./scripts/apply-azure-rbac.sh --remove YOUR_CLIENT_ID scripts/iam/azure-permissions.json
+#   ./scripts/apply-azure-rbac.sh --remove YOUR_CLIENT_ID scripts/iam/azure-apply-permissions.json
 #
 # JSON format — array of objects with fields:
 #   role:           Azure built-in role name (e.g. "Storage Blob Data Contributor")
