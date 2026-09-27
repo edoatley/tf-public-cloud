@@ -1,0 +1,132 @@
+<mxGraphModel adaptiveColors="auto">
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+
+    <mxCell id="title" value="Private Service Connect: one service exposed across two unjoined VPCs" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=16;fontStyle=1;fontColor=#333333;" vertex="1" parent="1">
+      <mxGeometry x="20" y="12" width="1360" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="subtitle" value="gcp/private-service-connect — a GCP network is a global resource with no IP range of its own; every range below belongs to a subnetwork" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=11;fontColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="20" y="40" width="1360" height="20" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="zone-consumer" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;strokeWidth=2;opacity=40;pointerEvents=0;arcSize=2;" vertex="1" parent="1">
+      <mxGeometry x="20" y="76" width="360" height="404" as="geometry"/>
+    </mxCell>
+    <mxCell id="lbl-consumer" value="CONSUMER VPC" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#1e4d78;" vertex="1" parent="1">
+      <mxGeometry x="36" y="84" width="200" height="20" as="geometry"/>
+    </mxCell>
+    <mxCell id="lbl-consumer2" value="no public IPs · owns no CIDR" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=10;fontColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="36" y="102" width="220" height="16" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="subnet-consumer" value="subnetwork 10.20.0.0/24" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6c8ebf;strokeWidth=1;dashed=1;fontSize=10;fontColor=#1e4d78;verticalAlign=top;align=left;spacingLeft=8;spacingTop=4;" vertex="1" parent="1">
+      <mxGeometry x="40" y="128" width="320" height="272" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="vm-consumer" value="consumer VM (e2-micro)&#xa;curls the endpoint on boot&#xa;SSH only via IAP 35.235.240.0/20" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e4d78;strokeColor=#1e4d78;fontColor=#ffffff;fontStyle=0;fontSize=11;arcSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="158" width="280" height="66" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="endpoint" value="PSC ENDPOINT&#xa;google_compute_forwarding_rule&#xa;load_balancing_scheme = &quot;&quot;&#xa;address 10.20.0.x — an ordinary IP&#xa;in the consumer's own subnetwork" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a1b9a;strokeColor=#6a1b9a;fontColor=#ffffff;fontStyle=0;fontSize=11;arcSize=10;" vertex="1" parent="1">
+      <mxGeometry x="60" y="284" width="280" height="96" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="e-vm-endpoint" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#6a1b9a;strokeWidth=2;" edge="1" parent="1" source="vm-consumer" target="endpoint">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="lbl-curl" value="curl http://10.20.0.x/" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=10;fontColor=#6a1b9a;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="208" y="240" width="150" height="16" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="zone-producer" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;strokeWidth=2;opacity=40;pointerEvents=0;arcSize=2;" vertex="1" parent="1">
+      <mxGeometry x="560" y="76" width="820" height="404" as="geometry"/>
+    </mxCell>
+    <mxCell id="lbl-producer" value="PRODUCER VPC" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=12;fontStyle=1;fontColor=#2d6a1f;" vertex="1" parent="1">
+      <mxGeometry x="576" y="84" width="200" height="20" as="geometry"/>
+    </mxCell>
+    <mxCell id="lbl-producer2" value="no public IPs · no Cloud NAT · owns no CIDR" style="text;html=1;align=left;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=10;fontColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="576" y="102" width="300" height="16" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="attachment" value="SERVICE&#xa;ATTACHMENT&#xa;&#xa;ACCEPT_&#xa;AUTOMATIC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#6a1b9a;strokeColor=#6a1b9a;fontColor=#ffffff;fontStyle=0;fontSize=11;arcSize=10;" vertex="1" parent="1">
+      <mxGeometry x="580" y="284" width="120" height="96" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="subnet-nat" value="PSC NAT subnetwork 10.10.100.0/24" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f3e5f5;strokeColor=#6a1b9a;strokeWidth=1;dashed=1;fontSize=10;fontColor=#6a1b9a;verticalAlign=top;align=left;spacingLeft=8;spacingTop=4;" vertex="1" parent="1">
+      <mxGeometry x="722" y="256" width="192" height="152" as="geometry"/>
+    </mxCell>
+    <mxCell id="nat-node" value="source NAT&#xa;10.20.0.x&#xa;becomes&#xa;10.10.100.x" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#6a1b9a;fontColor=#6a1b9a;fontStyle=1;fontSize=11;arcSize=10;" vertex="1" parent="1">
+      <mxGeometry x="738" y="288" width="160" height="88" as="geometry"/>
+    </mxCell>
+    <mxCell id="nat-purpose" value="purpose = PRIVATE_SERVICE_CONNECT&#xa;holds no instances" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=9;fontColor=#6a1b9a;" vertex="1" parent="1">
+      <mxGeometry x="722" y="380" width="192" height="24" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="ilb" value="INTERNAL&#xa;PASSTHROUGH NLB&#xa;&#xa;forwarding rule TCP:80&#xa;scheme = INTERNAL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#2d6a1f;strokeColor=#2d6a1f;fontColor=#ffffff;fontStyle=0;fontSize=11;arcSize=10;" vertex="1" parent="1">
+      <mxGeometry x="936" y="284" width="186" height="96" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="subnet-backend" value="subnetwork 10.10.0.0/24" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#82b366;strokeWidth=1;dashed=1;fontSize=10;fontColor=#2d6a1f;verticalAlign=top;align=left;spacingLeft=8;spacingTop=4;" vertex="1" parent="1">
+      <mxGeometry x="1152" y="256" width="208" height="152" as="geometry"/>
+    </mxCell>
+    <mxCell id="vm-producer" value="producer VM&#xa;(e2-micro)&#xa;&#xa;python3 -m http.server :80&#xa;no egress needed" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#1e4d78;strokeColor=#1e4d78;fontColor=#ffffff;fontStyle=0;fontSize=11;arcSize=10;" vertex="1" parent="1">
+      <mxGeometry x="1170" y="288" width="172" height="88" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="lb-control" value="region backend service (INTERNAL / TCP)  +  region health check :80  +  unmanaged instance group" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#82b366;fontColor=#2d6a1f;fontSize=10;arcSize=10;" vertex="1" parent="1">
+      <mxGeometry x="936" y="416" width="424" height="24" as="geometry"/>
+    </mxCell>
+    <mxCell id="lb-why" value="the load balancer is mandatory, not scaffolding — a service attachment can only target an internal LB forwarding rule" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=9;fontColor=#2d6a1f;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="936" y="444" width="424" height="26" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="hc-src" value="Google health-check ranges&#xa;35.191.0.0/16 · 130.211.0.0/22&#xa;must be allowed, or the backend&#xa;is permanently UNHEALTHY" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=12;fillColor=#ffffff;strokeColor=#d6b656;fontSize=10;align=left;fontColor=#7d5c00;" vertex="1" parent="1">
+      <mxGeometry x="1120" y="136" width="240" height="76" as="geometry"/>
+    </mxCell>
+    <mxCell id="e-hc" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#7d5c00;strokeWidth=2;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="hc-src" target="vm-producer">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="e-endpoint-att" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#6a1b9a;strokeWidth=2.5;" edge="1" parent="1" source="endpoint" target="attachment">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e-att-nat" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#6a1b9a;strokeWidth=2.5;" edge="1" parent="1" source="attachment" target="nat-node">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e-nat-ilb" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2d6a1f;strokeWidth=2.5;" edge="1" parent="1" source="nat-node" target="ilb">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="e-ilb-vm" style="endArrow=open;endFill=0;endSize=8;html=1;strokeColor=#2d6a1f;strokeWidth=2.5;" edge="1" parent="1" source="ilb" target="vm-producer">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="psc-band" value="the only path between&#xa;these two networks" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=11;fontStyle=1;fontColor=#6a1b9a;" vertex="1" parent="1">
+      <mxGeometry x="384" y="272" width="172" height="34" as="geometry"/>
+    </mxCell>
+    <mxCell id="psc-band2" value="one-way: the producer cannot&#xa;initiate anything back" style="text;html=1;align=center;verticalAlign=middle;strokeColor=none;fillColor=none;fontSize=9;fontColor=#6a1b9a;fontStyle=2;" vertex="1" parent="1">
+      <mxGeometry x="384" y="348" width="172" height="28" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="nopeer-line" style="endArrow=none;html=1;strokeColor=#b71c1c;strokeWidth=2;dashed=1;" edge="1" parent="1">
+      <mxGeometry relative="1" as="geometry">
+        <mxPoint x="160" y="512" as="sourcePoint"/>
+        <mxPoint x="1240" y="512" as="targetPoint"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="nopeer-x" value="&#10007;   NO VPC PEERING   ·   NO ROUTE EXCHANGE   ·   THE TWO CIDRs MAY OVERLAP" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#b71c1c;fontColor=#b71c1c;fontStyle=1;fontSize=11;arcSize=10;" vertex="1" parent="1">
+      <mxGeometry x="410" y="496" width="580" height="32" as="geometry"/>
+    </mxCell>
+
+    <mxCell id="note-consumer" value="What the CONSUMER sees&#xa;An ordinary internal address in its own subnetwork. It can reach the service and cannot reach the network hosting it — ip route shows no path to 10.10.0.0/24." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=12;fillColor=#ffffff;strokeColor=#6c8ebf;fontSize=10;align=left;fontColor=#1e4d78;" vertex="1" parent="1">
+      <mxGeometry x="20" y="556" width="430" height="92" as="geometry"/>
+    </mxCell>
+    <mxCell id="note-producer" value="What the PRODUCER sees&#xa;A source address in 10.10.100.0/24 — never 10.20.0.x. Firewall rules must therefore permit the NAT range; permitting the consumer range yields a connection that reaches ACCEPTED and then times out." style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=12;fillColor=#ffffff;strokeColor=#82b366;fontSize=10;align=left;fontColor=#2d6a1f;" vertex="1" parent="1">
+      <mxGeometry x="465" y="556" width="430" height="92" as="geometry"/>
+    </mxCell>
+    <mxCell id="note-proof" value="How the demo proves it&#xa;The consumer VM curls on boot and writes PSC-TEST: 200 to its serial console. The producer's access log, mirrored to its own serial console, shows the NAT address. Neither proof needs SSH.&#xa;scripts/examples/private-service-connect/gcp.sh" style="shape=note;whiteSpace=wrap;html=1;backgroundOutline=1;size=12;fillColor=#ffffff;strokeColor=#6a1b9a;fontSize=10;align=left;fontColor=#6a1b9a;" vertex="1" parent="1">
+      <mxGeometry x="910" y="556" width="470" height="92" as="geometry"/>
+    </mxCell>
+
+  </root>
+</mxGraphModel>
