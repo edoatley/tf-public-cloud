@@ -25,13 +25,14 @@ on:
           - azure
           - all
       action:
-        description: "Terraform action to run"
+        description: "Terraform action to run. preflight = apply, verify, then always destroy."
         required: true
         type: choice
         default: apply
         options:
           - apply
           - destroy
+          - preflight
       image_tag:
         description: "Docker image tag to deploy (required for containerised-app-prod apply)"
         required: false
@@ -54,7 +55,7 @@ jobs:
     name: "aws / ${{ inputs.resource_type }} / ${{ inputs.action }}"
     if: inputs.cloud == 'aws' || inputs.cloud == 'all'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     environment: production
 
     steps:
@@ -71,7 +72,23 @@ jobs:
         uses: ./.github/actions/terraform-run
         with:
           module_path: aws/${{ inputs.resource_type }}
-          action: ${{ inputs.action }}
+          action: ${{ inputs.action == 'preflight' && 'apply' || inputs.action }}
+          extra_vars: ${{ inputs.image_tag != '' && format('-var="image_tag={0}"', inputs.image_tag) || '' }}
+
+      - name: Verify module
+        if: inputs.action == 'apply' || inputs.action == 'preflight'
+        uses: ./.github/actions/verify-module
+        with:
+          module: ${{ inputs.resource_type }}
+          cloud: aws
+
+      # always(), so a failed verify still tears down rather than leaking resources.
+      - name: Tear down (preflight)
+        if: always() && inputs.action == 'preflight'
+        uses: ./.github/actions/terraform-run
+        with:
+          module_path: aws/${{ inputs.resource_type }}
+          action: destroy
           extra_vars: ${{ inputs.image_tag != '' && format('-var="image_tag={0}"', inputs.image_tag) || '' }}
 
   # ---------------------------------------------------------------------------
@@ -81,7 +98,7 @@ jobs:
     name: "gcp / ${{ inputs.resource_type }} / ${{ inputs.action }}"
     if: inputs.cloud == 'gcp' || inputs.cloud == 'all'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     environment: production
     env:
       TF_VAR_ci_service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
@@ -100,7 +117,23 @@ jobs:
         uses: ./.github/actions/terraform-run
         with:
           module_path: gcp/${{ inputs.resource_type }}
-          action: ${{ inputs.action }}
+          action: ${{ inputs.action == 'preflight' && 'apply' || inputs.action }}
+          extra_vars: -var="project=${{ vars.GCP_PROJECT_ID }}"
+
+      - name: Verify module
+        if: inputs.action == 'apply' || inputs.action == 'preflight'
+        uses: ./.github/actions/verify-module
+        with:
+          module: ${{ inputs.resource_type }}
+          cloud: gcp
+
+      # always(), so a failed verify still tears down rather than leaking resources.
+      - name: Tear down (preflight)
+        if: always() && inputs.action == 'preflight'
+        uses: ./.github/actions/terraform-run
+        with:
+          module_path: gcp/${{ inputs.resource_type }}
+          action: destroy
           extra_vars: -var="project=${{ vars.GCP_PROJECT_ID }}"
 
   # ---------------------------------------------------------------------------
@@ -110,7 +143,7 @@ jobs:
     name: "azure / ${{ inputs.resource_type }} / ${{ inputs.action }}"
     if: inputs.cloud == 'azure' || inputs.cloud == 'all'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     environment: production
     env:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
@@ -130,4 +163,19 @@ jobs:
         uses: ./.github/actions/terraform-run
         with:
           module_path: azure/${{ inputs.resource_type }}
-          action: ${{ inputs.action }}
+          action: ${{ inputs.action == 'preflight' && 'apply' || inputs.action }}
+
+      - name: Verify module
+        if: inputs.action == 'apply' || inputs.action == 'preflight'
+        uses: ./.github/actions/verify-module
+        with:
+          module: ${{ inputs.resource_type }}
+          cloud: azure
+
+      # always(), so a failed verify still tears down rather than leaking resources.
+      - name: Tear down (preflight)
+        if: always() && inputs.action == 'preflight'
+        uses: ./.github/actions/terraform-run
+        with:
+          module_path: azure/${{ inputs.resource_type }}
+          action: destroy

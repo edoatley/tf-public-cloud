@@ -5,6 +5,11 @@
 Captured from `release-1.1.3`, applied to `europe-west2` / `europe-west2-b`. The random suffix
 on every resource name is `9b3f`.
 
+> This run predates the check renumbering. Check 5 then inspected the guest routing table;
+> it has since been replaced by a VPC route-table assertion, and a direct-connection test
+> added as check 6, so a current run reports eight assertions across seven checks rather
+> than seven. The evidence below is otherwise unchanged.
+
 Addresses allocated on this run:
 
 | | Address | Subnetwork |
