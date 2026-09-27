@@ -86,8 +86,8 @@ Update IAM permissions without re-running the full bootstrap:
 ```sh
 ./scripts/bootstrap/apply-aws-iam-policy.sh github-tf-public-cloud-plan  scripts/iam/aws-plan-policy.json
 ./scripts/bootstrap/apply-aws-iam-policy.sh github-tf-public-cloud-apply scripts/iam/aws-apply-policy.json
-./scripts/bootstrap/apply-gcp-iam-bindings.sh [--remove] <sa-email> scripts/iam/gcp-permissions.json
-./scripts/bootstrap/apply-azure-rbac.sh [--remove] <client-id> scripts/iam/azure-permissions.json
+./scripts/bootstrap/apply-gcp-iam-bindings.sh [--remove] <sa-email> scripts/iam/gcp-apply-permissions.json
+./scripts/bootstrap/apply-azure-rbac.sh [--remove] <client-id> scripts/iam/azure-apply-permissions.json
 ```
 
 ## Terraform version

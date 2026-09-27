@@ -9,7 +9,8 @@
 #   4. Creates a 'default' GitHub Actions environment
 #   5. Adds a Federated Credential for the 'default' environment (covers all branches)
 #   6. Creates the examples Resource Group
-#   7. Applies RBAC assignments from scripts/iam/azure-permissions.json
+#   7. Applies RBAC assignments from scripts/iam/azure-plan-permissions.json and
+#      scripts/iam/azure-apply-permissions.json
 #
 # Usage:
 #   ./scripts/bootstrap-azure.sh

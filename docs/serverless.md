@@ -223,7 +223,7 @@ The new modules require additional permissions. Run the bootstrap apply scripts 
 # GCP (roles/cloudfunctions.admin)
 ./scripts/bootstrap/apply-gcp-iam-bindings.sh \
   github-actions-tf@gcp-sandbox-2026-18798.iam.gserviceaccount.com \
-  scripts/iam/gcp-permissions.json
+  scripts/iam/gcp-apply-permissions.json
 
 # Azure — no new RBAC needed (Contributor already covers all resources)
 ```

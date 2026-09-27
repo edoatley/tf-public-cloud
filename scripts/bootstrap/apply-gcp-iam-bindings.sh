@@ -9,12 +9,12 @@
 #   # Add all bindings in the file
 #   ./scripts/apply-gcp-iam-bindings.sh \
 #     github-actions-tf@gcp-sandbox-2026-18798.iam.gserviceaccount.com \
-#     scripts/iam/gcp-permissions.json
+#     scripts/iam/gcp-apply-permissions.json
 #
 #   # Remove all bindings in the file
 #   ./scripts/apply-gcp-iam-bindings.sh --remove \
 #     github-actions-tf@gcp-sandbox-2026-18798.iam.gserviceaccount.com \
-#     scripts/iam/gcp-permissions.json
+#     scripts/iam/gcp-apply-permissions.json
 #
 # JSON format — array of objects with fields:
 #   role:     GCP IAM role (e.g. roles/storage.objectAdmin)
