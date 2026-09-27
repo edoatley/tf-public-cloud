@@ -15,6 +15,7 @@ on:
           - containerised-app
           - containerised-app-prod
           - serverless
+          - private-service-connect
       cloud:
         description: "Cloud to target"
         required: true

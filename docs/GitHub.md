@@ -76,7 +76,7 @@ Runs plan across the selected cloud(s) for a named resource type. Uses `environm
 
 `workflow_dispatch` only. Inputs: `resource_type`, `cloud`, `action` (apply/destroy).
 
-Runs Terraform apply or destroy across the selected cloud(s). All jobs use `environment: production`. Must be triggered from a `release-*` tag or branch — the production environment protection rules enforce this.
+Runs Terraform apply or destroy across the selected cloud(s). All jobs use `environment: production`. Must be triggered from a `release-*` tag — the production environment's deployment branch policy lists a tag pattern only, so any branch, `main` included, is rejected.
 
 ### `build-and-push.yml` — Build and push container image
 
