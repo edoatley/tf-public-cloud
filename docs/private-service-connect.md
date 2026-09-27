@@ -17,6 +17,7 @@
   - [Verifying](#verifying)
     - [What the script checks](#what-the-script-checks)
     - [Doing it by hand](#doing-it-by-hand)
+    - [GCP's own analysis: Connectivity Tests](#gcps-own-analysis-connectivity-tests)
   - [Cleaning up](#cleaning-up)
   - [Other clouds](#other-clouds)
 
@@ -278,6 +279,46 @@ consumer$ curl -m 5 <producer_instance_ip>              # times out — no path 
 
 The last two lines are the point of the whole module: the consumer can reach the *service* and
 cannot reach the *network* hosting it.
+
+### GCP's own analysis: Connectivity Tests
+
+Network Intelligence Center's Connectivity Tests will trace the path independently, which is
+worth doing precisely because it is not our code making the claim. Enable the API, then create
+one test per direction of the argument:
+
+```sh
+gcloud services enable networkmanagement.googleapis.com --project <project>
+
+# A — to the PSC endpoint. Expect REACHABLE.
+gcloud network-management connectivity-tests create psc-a-endpoint --project=<project> \
+  --source-instance=projects/<project>/zones/europe-west2-b/instances/<consumer-vm> \
+  --destination-forwarding-rule=projects/<project>/regions/europe-west2/forwardingRules/<endpoint> \
+  --protocol=TCP --destination-port=80 --round-trip
+
+# B — to the producer VM directly. Expect UNREACHABLE.
+gcloud network-management connectivity-tests create psc-b-producer-vm --project=<project> \
+  --source-instance=projects/<project>/zones/europe-west2-b/instances/<consumer-vm> \
+  --destination-instance=projects/<project>/zones/europe-west2-b/instances/<producer-vm> \
+  --protocol=TCP --destination-port=80
+```
+
+![Connectivity test result for the PSC endpoint](images/psc-connectivity-test.png)
+
+*Test A. The forward trace names the hops GCP actually walks — subnet route, forwarding rule,
+NAT (Private Service Connect), forwarding rule, load balancer backend analysis — and the return
+trace shows the same NAT undone on the way back. Note the live data plane result: 50/50 packets
+delivered at 0.05 ms median, so this is not only a configuration analysis.*
+
+Test B returns `UNREACHABLE` with cause `PRIVATE_TRAFFIC_TO_INTERNET`: no peering route exists,
+so the default route matches, hands the packet to the internet gateway, and it is dropped there
+for carrying an RFC1918 destination.
+
+Delete both tests afterwards — they carry a small per-test charge:
+
+```sh
+gcloud network-management connectivity-tests delete psc-a-endpoint --project=<project> --quiet
+gcloud network-management connectivity-tests delete psc-b-producer-vm --project=<project> --quiet
+```
 
 ## Cleaning up
 

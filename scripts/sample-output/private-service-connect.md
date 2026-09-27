@@ -74,6 +74,43 @@ the *network* hosting it.
 On the first run, `gcloud compute ssh` generates `~/.ssh/google_compute_engine` before checks 5
 and 6 can connect; that one-time key generation has been omitted here.
 
+### Independent confirmation from GCP
+
+Network Intelligence Center Connectivity Tests, run against the same deployment, traces the path
+itself. Forward, to the PSC endpoint:
+
+```
+VM instance
+  -> Default egress firewall rule
+  -> Subnet route
+  -> Forwarding rule                      (the PSC endpoint)
+  -> NAT (Private Service Connect)        (src 10.20.0.3 becomes 10.10.100.2)
+  -> Forwarding rule                      (the producer ILB)
+  -> Load balancer backend analysis
+  -> VM instance
+  -> Ingress firewall rule
+  -> Packet could be delivered to tf-public-cloud-psc-producer-9b3f
+
+Overall: Reachable.  Live data plane: 50/50 packets delivered, 0.05 ms median.
+```
+
+The return trace runs the same hops in reverse with the NAT undone, and is also Reachable.
+
+To the producer VM directly, in the same project and region:
+
+```
+VM instance
+  -> Default egress firewall rule         (default-allow-egress, implied)
+  -> Subnet route                         (0.0.0.0/0, NEXT_HOP_INTERNET_GATEWAY)
+  -> DROP                                 cause: PRIVATE_TRAFFIC_TO_INTERNET
+
+Overall: Unreachable.
+```
+
+No peering hop appears in either trace, and no route covering `10.10.0.0/24` exists in the
+consumer VPC. For packet B the only matching route is the default one, so the packet is handed
+to the internet gateway and dropped there for carrying an RFC1918 destination.
+
 ### First deployment took four attempts
 
 Worth recording, since none of these were catchable by `terraform validate`, `tflint` or
