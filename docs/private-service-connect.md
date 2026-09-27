@@ -139,16 +139,26 @@ It also has two consequences worth internalising:
 
 ### Via GitHub Actions (recommended)
 
-```sh
-# Plan (read-only credentials, safe on any branch)
-gh workflow run plan-resource.yml \
-  --field resource_type=private-service-connect --field cloud=gcp
-gh run watch
+Plan uses read-only credentials and the `default` environment, so it runs from any branch:
 
-# Apply (requires approval via the production environment)
-gh workflow run apply-resource.yml \
+```sh
+gh workflow run plan-resource.yml \
+  --field resource_type=private-service-connect --field cloud=gcp --ref <branch>
+gh run watch
+```
+
+Apply and destroy use the `production` environment, which permits only refs matching
+`release-*` and requires reviewer approval. Tag first, then dispatch against the tag:
+
+```sh
+git tag release-1.0.7
+git push origin release-1.0.7
+
+gh workflow run apply-resource.yml --ref release-1.0.7 \
   --field resource_type=private-service-connect --field cloud=gcp --field action=apply
 ```
+
+See [docs/GitHub.md](GitHub.md) for the environment protection rules.
 
 ### Locally
 
@@ -217,7 +227,7 @@ cannot reach the *network* hosting it.
 ## Cleaning up
 
 ```sh
-gh workflow run apply-resource.yml \
+gh workflow run apply-resource.yml --ref release-1.0.7 \
   --field resource_type=private-service-connect --field cloud=gcp --field action=destroy
 ```
 
