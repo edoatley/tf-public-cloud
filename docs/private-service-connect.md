@@ -391,6 +391,16 @@ gh workflow run apply-resource.yml --ref release-1.0.7 \
 PSC endpoints bill per hour on top of the two `e2-micro` instances and the internal forwarding
 rule, so do not leave this applied.
 
+`terraform destroy` removes all 18 resources, but **one thing survives it**: the Service
+Directory namespace `goog-psc-default`, created automatically when the endpoint was created and
+never owned by Terraform. It is left empty and costs nothing, and a later deployment reuses it.
+Remove it by hand if you want the project genuinely clean:
+
+```sh
+gcloud service-directory namespaces delete goog-psc-default \
+  --location <region> --project <project>
+```
+
 ## Other clouds
 
 The AWS and Azure analogues — PrivateLink endpoint services, and Private Link Service behind a
