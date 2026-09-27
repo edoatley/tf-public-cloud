@@ -182,6 +182,17 @@ gcloud services enable servicedirectory.googleapis.com --project <project>
   scripts/iam/gcp-apply-permissions.json
 ```
 
+**Proving it before you commit to a deployment.** `action=preflight` applies the module, runs the
+verification script, then destroys it again whether the verification passed or not. That is the
+cheapest way to find the class of problem this module hit on its first four release tags — a zone
+stockout, an API constraint and a missing permission, none of which `terraform validate`, `tflint`
+or `terraform plan` can catch.
+
+```sh
+gh workflow run apply-resource.yml --ref release-1.1.3 \
+  --field resource_type=private-service-connect --field cloud=gcp --field action=preflight
+```
+
 Plan uses read-only credentials and the `default` environment, so it runs from any branch:
 
 ```sh
@@ -190,7 +201,7 @@ gh workflow run plan-resource.yml \
 gh run watch
 ```
 
-Apply and destroy use the `production` environment, which permits only refs matching
+Apply, destroy and preflight use the `production` environment, which permits only refs matching
 `release-*` and requires reviewer approval. Tag first, then dispatch against the tag:
 
 ```sh
@@ -236,22 +247,18 @@ which `terraform validate`, `tflint` or `terraform plan` could have caught.
 | 2 | Consumer got HTTP 200 on boot (`PSC-TEST: 200` on serial console) | Yes           | No            |
 | 3 | Producer's access log shows a source address in the NAT range, and never the consumer's own address | Yes | No |
 | 4 | Neither network has any VPC peering                              | Yes            | No            |
-| 5 | Consumer has no route into the producer VPC                      | No — skips     | Yes           |
-| 6 | Live on-demand `curl` through the endpoint                       | No — skips     | Yes           |
+| 5 | Consumer VPC route table has no peering next hop and no route covering the producer range | Yes | No |
+| 6 | Direct connection to the producer VM fails                       | No — skips     | Yes           |
+| 7 | Live on-demand `curl` through the endpoint                       | No — skips     | Yes           |
 
-**Check 5 is weaker than it looks.** It inspects the guest's routing table, but in GCP a VM has
-a /32 address and a single default route, so `ip route get` returns the same next hop for *every*
-destination — it would report exactly the same thing if the VPCs were peered. It proves the
-guest makes no routing decision; it does not prove the producer VPC is unreachable. The
-assertions that actually prove that are a connection attempt (`curl -m 5 http://10.10.0.2/`
-must time out) and the VPC route table carrying no peering next hop. Replacing check 5 with
-those two is tracked in
-[docs/todo/post-apply-verification-in-ci.md](todo/post-apply-verification-in-ci.md).
+Checks 6 and 7 need `roles/iap.tunnelResourceAccessor` on the caller and may need
+`gcloud services enable iap.googleapis.com`. They are deliberately not load-bearing: checks 1–5
+already prove the data path and the absence of any network join, and none of them needs SSH.
 
-Checks 5 and 6 need `roles/iap.tunnelResourceAccessor` on the caller and may need
-`gcloud services enable iap.googleapis.com`. They are deliberately not load-bearing: checks 1–4
-already prove the data path and the absence of any network join. On a verified run all seven
-assertions pass with nothing skipped.
+Check 5 deliberately does **not** inspect the guest routing table. A GCP VM has a /32 address and
+a single default route, so `ip route get` returns the same next hop for every destination and
+would look identical on peered VPCs. Unreachability is proven from the VPC route table instead,
+and confirmed by check 6's connection attempt.
 
 ### Doing it by hand
 

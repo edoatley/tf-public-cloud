@@ -72,11 +72,21 @@ This workflow validates only — it never plans or applies. Use `plan-resource.y
 
 Runs plan across the selected cloud(s) for a named resource type. Uses `environment: default` on all jobs. Useful for previewing changes on a feature branch before triggering apply.
 
-### `apply-resource.yml` — Manual apply or destroy for a specific module
+### `apply-resource.yml` — Manual apply, destroy or preflight for a specific module
 
-`workflow_dispatch` only. Inputs: `resource_type`, `cloud`, `action` (apply/destroy).
+`workflow_dispatch` only. Inputs: `resource_type`, `cloud`, `action` (apply/destroy/preflight).
 
-Runs Terraform apply or destroy across the selected cloud(s). All jobs use `environment: production`. Must be triggered from a `release-*` tag — the production environment's deployment branch policy lists a tag pattern only, so any branch, `main` included, is rejected.
+Runs Terraform across the selected cloud(s). All jobs use `environment: production`. Must be triggered from a `release-*` tag — the production environment's deployment branch policy lists a tag pattern only, so any branch, `main` included, is rejected.
+
+| `action` | What runs |
+| -------- | --------- |
+| `apply` | `terraform apply`, then the module's verification script |
+| `destroy` | `terraform destroy` |
+| `preflight` | `terraform apply`, the verification script, then `terraform destroy` — always, even when the verification fails |
+
+**Verification.** After an apply, the job runs `scripts/examples/<resource_type>/<cloud>.sh` if it exists and fails the job when the script exits non-zero, so a green run means the module works rather than merely that Terraform succeeded. A module with no script for that cloud is reported as a GitHub warning annotation and in the step summary as **Not verified** — never as a pass. The script's last 60 lines are written to the step summary either way.
+
+**Preflight** exists for proving a new or substantially reworked module before cutting a release tag. The teardown step carries `if: always()`, so a failed verification still destroys rather than leaking resources; the job's own result reflects the verification, not the teardown. It reuses `environment: production` and therefore still needs a `release-*` tag.
 
 ### `build-and-push.yml` — Build and push container image
 

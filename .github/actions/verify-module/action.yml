@@ -1,0 +1,54 @@
+name: verify-module
+description: >
+  Run a module's example verification script so a green apply means the module works, not
+  merely that Terraform succeeded. Caller must run cloud auth before this action.
+
+inputs:
+  module:
+    description: "Module name, e.g. private-service-connect."
+    required: true
+  cloud:
+    description: "Cloud the module was applied to: aws, gcp or azure."
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Verify module
+      shell: bash
+      env:
+        MODULE: ${{ inputs.module }}
+        CLOUD: ${{ inputs.cloud }}
+      run: |
+        set -uo pipefail
+        script="scripts/examples/${MODULE}/${CLOUD}.sh"
+
+        # A module with no script is not a failure, but it must never look like a pass.
+        if [ ! -f "${script}" ]; then
+          echo "::warning title=Module not verified::${script} does not exist, so the apply was not checked."
+          {
+            printf '## verify: `%s` / %s\n\n' "${MODULE}" "${CLOUD}"
+            printf ':warning: **Not verified** — no `%s` in this repo.\n' "${script}"
+          } >> "${GITHUB_STEP_SUMMARY}"
+          exit 0
+        fi
+
+        echo "==> ${script}"
+        chmod +x "${script}"
+        set -o pipefail
+        "./${script}" 2>&1 | tee /tmp/verify-output.txt
+        rc=${PIPESTATUS[0]}
+
+        {
+          printf '## verify: `%s` / %s\n\n' "${MODULE}" "${CLOUD}"
+          if [ "${rc}" -eq 0 ]; then
+            printf ':white_check_mark: **Passed** — `%s`\n\n' "${script}"
+          else
+            printf ':x: **Failed** (exit %s) — `%s`\n\n' "${rc}" "${script}"
+          fi
+          printf '```\n'
+          tail -n 60 /tmp/verify-output.txt
+          printf '```\n'
+        } >> "${GITHUB_STEP_SUMMARY}"
+
+        exit "${rc}"

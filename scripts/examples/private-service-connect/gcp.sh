@@ -5,7 +5,7 @@
 # Usage: ./scripts/examples/private-service-connect/gcp.sh
 #
 # Resources are discovered via the gcloud CLI, so no Terraform state access is
-# needed. Checks 1-4 are hard assertions. Checks 5-6 need IAP SSH and are
+# needed. Checks 1-5 are hard assertions. Checks 6-7 need IAP SSH and are
 # skipped loudly if the tunnel is unavailable; a SKIP is reported but does not
 # fail the run.
 #
@@ -121,20 +121,47 @@ else
   fail "producer network has peerings: ${PEERINGS}"
 fi
 
-step "5. Consumer has no route into the producer VPC (needs IAP SSH)"
+# Do NOT assert on the guest routing table here. A GCP VM has a /32 address and a
+# single default route, so "ip route get" returns the same next hop for every
+# destination and would look identical on peered VPCs. Unreachability has to be
+# proven from the VPC route table and from a connection that fails.
+step "5. Consumer VPC holds no route to the producer"
+PEERING_ROUTES="$(gcloud compute routes list \
+  --filter="network~'${CONSUMER_NET}'" --format='value(nextHopPeering)' | grep -c . || true)"
+PRODUCER_PREFIX="${PRODUCER_IP%.*}."
+PRODUCER_ROUTES="$(gcloud compute routes list \
+  --filter="network~'${CONSUMER_NET}'" --format='value(destRange)' \
+  | grep -c "^${PRODUCER_PREFIX}" || true)"
+echo "${CYN}    $(gcloud compute routes list --filter="network~'${CONSUMER_NET}'" \
+  --format='value[separator=" -> "](destRange,nextHopGateway.basename())' | tr '\n' '|')${RST}"
+if [ "${PEERING_ROUTES}" -eq 0 ]; then
+  pass "no peering next hop in the consumer VPC route table"
+else
+  fail "${PEERING_ROUTES} route(s) in the consumer VPC use a peering next hop"
+fi
+if [ "${PRODUCER_ROUTES}" -eq 0 ]; then
+  pass "no route covering ${PRODUCER_PREFIX}0/24 — the producer range is unrouteable from here"
+else
+  fail "${PRODUCER_ROUTES} route(s) cover the producer range ${PRODUCER_PREFIX}0/24"
+fi
+
 SSH="gcloud compute ssh ${CONSUMER_VM} --zone ${ZONE} --tunnel-through-iap --quiet"
-if ROUTE="$(${SSH} --command="ip route get ${PRODUCER_IP}" 2>/dev/null)"; then
-  echo "${CYN}    ${ROUTE}${RST}"
-  if echo "${ROUTE}" | grep -q 'via'; then
-    pass "producer address resolves via the default gateway, not a VPC route"
+
+step "6. Consumer cannot reach the producer VM directly (needs IAP SSH)"
+# echo runs regardless of curl, so ssh exits 0 whenever the tunnel itself worked.
+# That keeps "curl failed" distinguishable from "could not connect to run curl".
+if OUT="$(${SSH} --command="curl -s -m 5 -o /dev/null http://${PRODUCER_IP}/ ; echo CURL_RC=\$?" 2>/dev/null)"; then
+  RC="$(echo "${OUT}" | grep -o 'CURL_RC=[0-9]*' | cut -d= -f2)"
+  if [ "${RC}" = "0" ]; then
+    fail "consumer reached the producer VM directly at ${PRODUCER_IP} — the VPCs are not isolated"
   else
-    fail "unexpected route to the producer address: ${ROUTE}"
+    pass "direct connection to ${PRODUCER_IP} failed as it must (curl exit ${RC})"
   fi
 else
   skip "IAP SSH unavailable (needs roles/iap.tunnelResourceAccessor and the IAP API)"
 fi
 
-step "6. Live request from the consumer over the PSC endpoint (needs IAP SSH)"
+step "7. Live request from the consumer over the PSC endpoint (needs IAP SSH)"
 if BODY="$(${SSH} --command="curl -sf -m 5 http://${ENDPOINT_IP}/" 2>/dev/null)"; then
   echo "${CYN}    ${BODY}${RST}"
   pass "HTTP 200 from ${ENDPOINT_IP} on demand"
