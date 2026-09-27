@@ -130,14 +130,31 @@ It also has two consequences worth internalising:
 - **The producer's access log is mirrored to the serial console** (`StandardError=journal+console`
   on the systemd unit). That is how the demo proves source NAT without opening an SSH path into
   the producer VPC. Deliberately noisy; do not copy this into production.
-- **No IAM changes needed.** `roles/compute.admin`, already granted in
-  `scripts/iam/gcp-permissions.json`, covers networks, subnetworks, firewalls, addresses,
-  instances, instance groups, health checks, backend services, forwarding rules and service
-  attachments.
+- **Needs Service Directory, which `compute.admin` does not cover.** Everything else in the
+  module — networks, subnetworks, firewalls, addresses, instances, instance groups, health
+  checks, backend services, forwarding rules, the service attachment — falls under
+  `roles/compute.admin`. But creating the consumer's PSC endpoint auto-registers it in a
+  Service Directory namespace called `goog-psc-default`, which needs
+  `servicedirectory.namespaces.create`. So this module adds `roles/servicedirectory.editor` to
+  `scripts/iam/gcp-permissions.json`, and `servicedirectory.googleapis.com` to the API list in
+  `scripts/bootstrap/bootstrap-gcp.sh`. On an existing project both have to be applied by hand
+  before the first apply — see [Deploying](#deploying).
 
 ## Deploying
 
 ### Via GitHub Actions (recommended)
+
+**One-time prerequisites.** This module is the first to need Service Directory, so on a project
+bootstrapped before it was added, enable the API and grant the role (both need project-admin
+credentials, not CI's):
+
+```sh
+gcloud services enable servicedirectory.googleapis.com --project <project>
+
+./scripts/bootstrap/apply-gcp-iam-bindings.sh \
+  github-actions-tf-apply@<project>.iam.gserviceaccount.com \
+  scripts/iam/gcp-apply-permissions.json
+```
 
 Plan uses read-only credentials and the `default` environment, so it runs from any branch:
 
